@@ -363,7 +363,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+<<<<<<< HEAD
 --- !u!1 &1660822220
+=======
+--- !u!1 &1979631410
+>>>>>>> origin/main
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -371,7 +375,11 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
+<<<<<<< HEAD
   - component: {fileID: 1660822221}
+=======
+  - component: {fileID: 1979631411}
+>>>>>>> origin/main
   m_Layer: 0
   m_Name: GameObject (1)
   m_TagString: Untagged
@@ -379,13 +387,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+<<<<<<< HEAD
 --- !u!4 &1660822221
+=======
+--- !u!4 &1979631411
+>>>>>>> origin/main
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
+<<<<<<< HEAD
   m_GameObject: {fileID: 1660822220}
+=======
+  m_GameObject: {fileID: 1979631410}
+>>>>>>> origin/main
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -401,4 +417,8 @@ SceneRoots:
   - {fileID: 1289849197}
   - {fileID: 1442095522}
   - {fileID: 1459846754}
+<<<<<<< HEAD
   - {fileID: 1660822221}
+=======
+  - {fileID: 1979631411}
+>>>>>>> origin/main
