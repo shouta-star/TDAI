@@ -9,6 +9,14 @@ public class MoveState : AgentBaseState
 
     public override void Execute(AgentController agent)
     {
+        // š‚±‚±‚ÅÄ’Tõ—v‹‚É‘Î‰
+        if (agent.needReplan)
+        {
+            agent.needReplan = false;
+            agent.ChangeState(new SearchState());
+            return;
+        }
+
         if (agent.currentPath == null || agent.currentPath.Length == 0)
         {
             agent.ChangeState(new SearchState());

@@ -16,9 +16,23 @@ public class AgentController : MonoBehaviour
     [HideInInspector] public int pathIndex = 0;
     [HideInInspector] public bool reachedGoal = false;
 
+    // ★追加：MapManager参照と再探索フラグ
+    private MapManager map;
+    [HideInInspector] public bool needReplan = false;
+
+    private void Awake()
+    {
+        // ★非推奨APIの置換
+        map = Object.FindFirstObjectByType<MapManager>();
+    }
+
     private void Start()
     {
         ChangeState(idleState);
+
+        //var map = FindObjectOfType<MapManager>();
+        var map = Object.FindFirstObjectByType<MapManager>();
+        map.TileChanged += OnTileChanged;  // バッチTilesChangedでもOK
     }
 
     private void Update()
@@ -53,4 +67,29 @@ public class AgentController : MonoBehaviour
     }
 
     public AgentData GetData() => data;
+
+    private void OnDestroy()
+    {
+        //var map = FindObjectOfType<MapManager>();
+        var map = Object.FindFirstObjectByType<MapManager>();
+        if (map != null) map.TileChanged -= OnTileChanged;
+    }
+
+    // ★現在の経路上のセルが変更されたら、再探索を要求
+    private void OnTileChanged(MapManager.TileChangedArgs args)
+    {
+        if (currentPath == null || map == null) return;
+
+        for (int i = pathIndex; i < currentPath.Length; i++)
+        {
+            if (map.WorldToGrid(currentPath[i], out int x, out int z))
+            {
+                if (x == args.x && z == args.z)
+                {
+                    needReplan = true;
+                    break;
+                }
+            }
+        }
+    }
 }

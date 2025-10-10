@@ -26,7 +26,8 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("[GameManager] ƒQ[ƒ€ŠJn");
 
-        mapManager.GenerateMap();
+        //mapManager.GenerateMap();
+        mapManager.GenerateIndexFromScene();
         aiManager.SpawnAgents();
 
         totalAgents = aiManager.AgentCount;

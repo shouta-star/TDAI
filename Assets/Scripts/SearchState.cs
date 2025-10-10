@@ -6,7 +6,9 @@ public class SearchState : AgentBaseState
     {
         Debug.Log($"[{agent.name}] SearchState: Œo˜H’TõŠJn");
 
-        AIManager aiManager = GameObject.FindObjectOfType<AIManager>();
+        //AIManager aiManager = GameObject.FindObjectOfType<AIManager>();
+        AIManager aiManager = Object.FindFirstObjectByType<AIManager>();
+
         Vector3 start = agent.transform.position;
         Vector3 goal = agent.GetGoalPosition();
 
