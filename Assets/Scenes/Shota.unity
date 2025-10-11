@@ -28550,9 +28550,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7569ec4f6c3d0904fb993a3dbc88db51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mapRoot: {fileID: 0}
-  sizeX: 1
-  sizeZ: 1
+  mapRoot: {fileID: 1627509932}
+  sizeX: 20
+  sizeZ: 20
   nodeSpacing: 1
   entrance: {fileID: 1339667518}
   goal: {fileID: 280744034}

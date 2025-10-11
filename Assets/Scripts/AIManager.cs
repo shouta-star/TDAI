@@ -19,12 +19,32 @@ public class AIManager : MonoBehaviour
         map = Object.FindFirstObjectByType<MapManager>();
     }
 
+    //public void SpawnAgents()
+    //{
+    //    agents.Clear();
+    //    for (int i = 0; i < spawnCount; i++)
+    //    {
+    //        var go = Instantiate(agentPrefab, spawnPoint.position, Quaternion.identity);
+    //        var agent = go.GetComponent<AgentController>();
+    //        agent.name = $"Agent_{i}";
+    //        agent.SetGoal(goalPoint);
+    //        agents.Add(agent);
+    //    }
+    //    Debug.Log($"[AIManager] Spawned {agents.Count} agents.");
+    //}
     public void SpawnAgents()
     {
         agents.Clear();
         for (int i = 0; i < spawnCount; i++)
         {
             var go = Instantiate(agentPrefab, spawnPoint.position, Quaternion.identity);
+
+            // ★ 生成直後にマス中心にスナップ（これが重要）
+            if (map.WorldToGrid(go.transform.position, out int gx, out int gz))
+            {
+                go.transform.position = map.GridToWorld(gx, gz);
+            }
+
             var agent = go.GetComponent<AgentController>();
             agent.name = $"Agent_{i}";
             agent.SetGoal(goalPoint);
@@ -32,6 +52,7 @@ public class AIManager : MonoBehaviour
         }
         Debug.Log($"[AIManager] Spawned {agents.Count} agents.");
     }
+
 
     // ===== A* : MapManager の軽量APIを使った実装 =====
     public Vector3[] GetPath(Vector3 startWorld, Vector3 goalWorld)
@@ -50,6 +71,8 @@ public class AIManager : MonoBehaviour
         g[start] = 0f;
         f[start] = Heuristic(start, goal);
         open.Enqueue(start, f[start]);
+
+        Debug.Log($"[A*] StartGrid=({sx},{sz}) GoalGrid=({gx},{gz})");
 
         while (open.Count > 0)
         {
@@ -92,6 +115,13 @@ public class AIManager : MonoBehaviour
             cur = prev;
         }
         list.Reverse();
+
+        // ★ 経路の確認ログを出す
+        Debug.Log("AAA");
+        Debug.Log($"[A*] Path length = {list.Count}");
+        foreach (var p in list)
+            Debug.Log($"[A*] → {p}");
+
         return list.ToArray();
     }
 

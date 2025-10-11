@@ -6,8 +6,8 @@ public class MapManager : MonoBehaviour
 {
     [Header("Grid Settings")]
     public Transform mapRoot;      // すべての Tile をぶら下げた親
-    public int sizeX = 10;
-    public int sizeZ = 10;
+    public int sizeX;
+    public int sizeZ ;
     public float nodeSpacing = 1f;
 
     [Header("Entrances & Goal")]
@@ -74,21 +74,48 @@ public class MapManager : MonoBehaviour
         return (t != null) ? t.moveCost : Mathf.Infinity;
     }
 
+    //public IEnumerable<Vector2Int> GetNeighbors(Vector2Int node, bool diagonal = true)
+    //{
+    //    // 8方向 or 4方向
+    //    for (int dx = -1; dx <= 1; dx++)
+    //    {
+    //        for (int dz = -1; dz <= 1; dz++)
+    //        {
+    //            if (dx == 0 && dz == 0) continue;
+    //            if (!diagonal && Mathf.Abs(dx) + Mathf.Abs(dz) != 1) continue;
+
+    //            int nx = node.x + dx;
+    //            int nz = node.y + dz;
+    //            if (!InRange(nx, nz)) continue;
+    //            yield return new Vector2Int(nx, nz);
+    //        }
+    //    }
+    //}
     public IEnumerable<Vector2Int> GetNeighbors(Vector2Int node, bool diagonal = true)
     {
-        // 8方向 or 4方向
-        for (int dx = -1; dx <= 1; dx++)
+        if (diagonal)
         {
-            for (int dz = -1; dz <= 1; dz++)
+            // 8方向
+            for (int dx = -1; dx <= 1; dx++)
             {
-                if (dx == 0 && dz == 0) continue;
-                if (!diagonal && Mathf.Abs(dx) + Mathf.Abs(dz) != 1) continue;
+                for (int dz = -1; dz <= 1; dz++)
+                {
+                    if (dx == 0 && dz == 0) continue;
 
-                int nx = node.x + dx;
-                int nz = node.y + dz;
-                if (!InRange(nx, nz)) continue;
-                yield return new Vector2Int(nx, nz);
+                    int nx = node.x + dx;
+                    int nz = node.y + dz;
+                    if (!InRange(nx, nz)) continue;
+                    yield return new Vector2Int(nx, nz);
+                }
             }
+        }
+        else
+        {
+            // 4方向のみ（上下左右）
+            yield return new Vector2Int(node.x + 1, node.y);
+            yield return new Vector2Int(node.x - 1, node.y);
+            yield return new Vector2Int(node.x, node.y + 1);
+            yield return new Vector2Int(node.x, node.y - 1);
         }
     }
 
