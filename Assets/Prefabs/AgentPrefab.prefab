@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 603705929890012619}
   - component: {fileID: 4087644283217985083}
   - component: {fileID: 1488228813746839890}
+  - component: {fileID: -9219881909236067073}
+  - component: {fileID: -5444200897947860547}
   m_Layer: 0
   m_Name: AgentPrefab
   m_TagString: Untagged
@@ -126,3 +128,44 @@ MonoBehaviour:
   pathIndex: 0
   reachedGoal: 0
   needReplan: 0
+--- !u!114 &-9219881909236067073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1684732383747433868}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f98fc2b3d7189a64395853d219726d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHP: 100
+  currentHP: 100
+  invincible: 0
+  autoRegenPerSec: 0
+  enableDebugLog: 1
+  autoDestroyOnDeath: 0
+  OnDamaged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHealed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &-5444200897947860547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1684732383747433868}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af25d9ed30eb4264faacbe4e9af76480, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tile: {fileID: 4028967064036291582, guid: 0b9b4a3017d9ffe4c88fcaa6473d8533, type: 3}
+  damageOnEnter: 10

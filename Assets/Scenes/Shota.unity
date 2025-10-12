@@ -15313,7 +15313,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4028967064036291582, guid: 0b9b4a3017d9ffe4c88fcaa6473d8533, type: 3}
       propertyPath: type
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4028967064036291582, guid: 0b9b4a3017d9ffe4c88fcaa6473d8533, type: 3}
       propertyPath: gridX
@@ -16549,7 +16549,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4028967064036291582, guid: 0b9b4a3017d9ffe4c88fcaa6473d8533, type: 3}
       propertyPath: type
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4028967064036291582, guid: 0b9b4a3017d9ffe4c88fcaa6473d8533, type: 3}
       propertyPath: gridX
@@ -28255,7 +28255,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4028967064036291582, guid: 0b9b4a3017d9ffe4c88fcaa6473d8533, type: 3}
       propertyPath: type
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4028967064036291582, guid: 0b9b4a3017d9ffe4c88fcaa6473d8533, type: 3}
       propertyPath: gridX
@@ -28641,7 +28641,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4028967064036291582, guid: 0b9b4a3017d9ffe4c88fcaa6473d8533, type: 3}
       propertyPath: type
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4028967064036291582, guid: 0b9b4a3017d9ffe4c88fcaa6473d8533, type: 3}
       propertyPath: gridX
