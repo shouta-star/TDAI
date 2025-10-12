@@ -1,30 +1,30 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System;
 using System.Collections.Generic;
 
 public class MapManager : MonoBehaviour
 {
     [Header("Grid Settings")]
-    public Transform mapRoot;      // ‚·‚×‚Ä‚Ì Tile ‚ğ‚Ô‚ç‰º‚°‚½e
+    public Transform mapRoot;      // ã™ã¹ã¦ã® Tile ã‚’ã¶ã‚‰ä¸‹ã’ãŸè¦ª
     public int sizeX;
     public int sizeZ ;
     public float nodeSpacing = 1f;
 
     [Header("Entrances & Goal")]
-    public Transform entrance;     // ’Pˆê“üŒû‚Ì—ái•¡”‚É‚·‚é‚È‚ç”z—ñ‚Å‚Âj
+    public Transform entrance;     // å˜ä¸€å…¥å£ã®ä¾‹ï¼ˆè¤‡æ•°ã«ã™ã‚‹ãªã‚‰é…åˆ—ã§æŒã¤ï¼‰
     public Transform goal;
 
-    // õˆø
+    // ç´¢å¼•
     private TileComponent[,] tiles;
 
-    // •ÏX’Ê’mi’P”­ / ƒoƒbƒ`j
+    // å¤‰æ›´é€šçŸ¥ï¼ˆå˜ç™º / ãƒãƒƒãƒï¼‰
     public struct TileChangedArgs { public int x, z; public TileType from, to; }
     public event Action<TileChangedArgs> TileChanged;
     public event Action<List<TileChangedArgs>> TilesChanged;
 
     public void GenerateIndexFromScene()
     {
-        // è“®”z’u‚³‚ê‚½ Tile ‚ğƒV[ƒ“‚©‚çW‚ß‚ÄƒOƒŠƒbƒh‚Éõˆø‰»
+        // æ‰‹å‹•é…ç½®ã•ã‚ŒãŸ Tile ã‚’ã‚·ãƒ¼ãƒ³ã‹ã‚‰é›†ã‚ã¦ã‚°ãƒªãƒƒãƒ‰ã«ç´¢å¼•åŒ–
         tiles = new TileComponent[sizeX, sizeZ];
 
         var allTiles = mapRoot.GetComponentsInChildren<TileComponent>(true);
@@ -34,7 +34,7 @@ public class MapManager : MonoBehaviour
             if (InRange(t.gridX, t.gridZ))
             {
                 tiles[t.gridX, t.gridZ] = t;
-                // ˆÊ’u‡‚í‚¹i’†Sj
+                // ä½ç½®åˆã‚ã›ï¼ˆä¸­å¿ƒï¼‰
                 var pos = new Vector3(t.gridX * nodeSpacing, t.transform.position.y, t.gridZ * nodeSpacing);
                 t.transform.position = pos;
                 registered++;
@@ -46,6 +46,51 @@ public class MapManager : MonoBehaviour
         }
         Debug.Log($"[MapManager] Indexed {registered}/{allTiles.Length} tiles.");
     }
+    //public void GenerateIndexFromScene()
+    //{
+    //    // æ‰‹å‹•é…ç½®ã•ã‚ŒãŸTileã‚’ã‚·ãƒ¼ãƒ³ã‹ã‚‰é›†ã‚ã¦ã‚°ãƒªãƒƒãƒ‰ã«ç´¢å¼•åŒ–
+    //    tiles = new TileComponent[sizeX, sizeZ];
+
+    //    var allTiles = mapRoot.GetComponentsInChildren<TileComponent>(true);
+    //    int registered = 0;
+
+    //    // ZãŒè² ã®å ´åˆã«ã‚ªãƒ•ã‚»ãƒƒãƒˆã‚’ã‹ã‘ã‚‹æº–å‚™
+    //    // Z ãŒ -20ã€œ0 ã®ç¯„å›²ãªã‚‰ offsetZ = 20
+    //    int offsetZ = 0;
+    //    foreach (var t in allTiles)
+    //    {
+    //        if (t.gridZ < 0 && Mathf.Abs(t.gridZ) > offsetZ)
+    //            offsetZ = Mathf.Abs(t.gridZ);
+    //    }
+
+    //    foreach (var t in allTiles)
+    //    {
+    //        // --- Zåº§æ¨™ã®è£œæ­£ ---
+    //        int correctedZ = t.gridZ + offsetZ; // -20~0, 0~20 ã®ã‚ˆã†ã«è£œæ­£
+
+    //        if (InRange(t.gridX, correctedZ))
+    //        {
+    //            tiles[t.gridX, correctedZ] = t;
+
+    //            // ä½ç½®åˆã‚ã›(ä¸­å¿ƒã«ã‚¹ãƒŠãƒƒãƒ—)
+    //            var pos = new Vector3(
+    //                t.gridX * nodeSpacing,
+    //                t.transform.position.y,
+    //                correctedZ * nodeSpacing
+    //            );
+    //            t.transform.position = pos;
+
+    //            registered++;
+    //        }
+    //        else
+    //        {
+    //            Debug.LogWarning($"[MapManager] Tile out of range ({t.gridX},{correctedZ})");
+    //        }
+    //    }
+
+    //    Debug.Log($"[MapManager] Indexed {registered}/{allTiles.Length} tiles. (offsetZ={offsetZ})");
+    //}
+
 
     private void Awake()
     {
@@ -59,7 +104,7 @@ public class MapManager : MonoBehaviour
 
     public bool InRange(int x, int z) => (x >= 0 && x < sizeX && z >= 0 && z < sizeZ);
 
-    // ==== A* —p Œy—ÊAPI ====
+    // ==== A* ç”¨ è»½é‡API ====
     public bool IsWalkable(int x, int z)
     {
         if (!InRange(x, z)) return false;
@@ -76,7 +121,7 @@ public class MapManager : MonoBehaviour
 
     //public IEnumerable<Vector2Int> GetNeighbors(Vector2Int node, bool diagonal = true)
     //{
-    //    // 8•ûŒü or 4•ûŒü
+    //    // 8æ–¹å‘ or 4æ–¹å‘
     //    for (int dx = -1; dx <= 1; dx++)
     //    {
     //        for (int dz = -1; dz <= 1; dz++)
@@ -95,7 +140,7 @@ public class MapManager : MonoBehaviour
     {
         if (diagonal)
         {
-            // 8•ûŒü
+            // 8æ–¹å‘
             for (int dx = -1; dx <= 1; dx++)
             {
                 for (int dz = -1; dz <= 1; dz++)
@@ -111,7 +156,7 @@ public class MapManager : MonoBehaviour
         }
         else
         {
-            // 4•ûŒü‚Ì‚İiã‰º¶‰Ej
+            // 4æ–¹å‘ã®ã¿ï¼ˆä¸Šä¸‹å·¦å³ï¼‰
             yield return new Vector2Int(node.x + 1, node.y);
             yield return new Vector2Int(node.x - 1, node.y);
             yield return new Vector2Int(node.x, node.y + 1);
@@ -139,36 +184,36 @@ public class MapManager : MonoBehaviour
         return tile != null;
     }
 
-    // ==== •ÏXAPI ====
+    // ==== å¤‰æ›´API ====
     public bool CanChange(int x, int z, TileType toType, out string reason)
     {
         reason = null;
-        if (!InRange(x, z)) { reason = "”ÍˆÍŠO"; return false; }
-        if (!TryGetTile(x, z, out var tile)) { reason = "ƒ^ƒCƒ‹–¢“o˜^"; return false; }
+        if (!InRange(x, z)) { reason = "ç¯„å›²å¤–"; return false; }
+        if (!TryGetTile(x, z, out var tile)) { reason = "ã‚¿ã‚¤ãƒ«æœªç™»éŒ²"; return false; }
 
-        // —á: Start/Goal ‚Í•ÏX‹Ö~i•K—v‚É‰‚¶‚ÄŠÉ˜aj
+        // ä¾‹: Start/Goal ã¯å¤‰æ›´ç¦æ­¢ï¼ˆå¿…è¦ã«å¿œã˜ã¦ç·©å’Œï¼‰
         if (tile.type == TileType.Start || tile.type == TileType.Goal)
-        { reason = "Start/Goal ‚Í•ÏX•s‰Â"; return false; }
+        { reason = "Start/Goal ã¯å¤‰æ›´ä¸å¯"; return false; }
 
-        // ‰¼“K—p‚µ‚Ä“’B‰Â”\«ƒ`ƒFƒbƒNi••½–h~j
+        // ä»®é©ç”¨ã—ã¦åˆ°é”å¯èƒ½æ€§ãƒã‚§ãƒƒã‚¯ï¼ˆå°é–é˜²æ­¢ï¼‰
         var fromType = tile.type;
         var fromWalkable = tile.walkable;
         var fromCost = tile.moveCost;
 
-        // ‰¼‚Ì˜_—’l
+        // ä»®ã®è«–ç†å€¤
         var (tmpWalkable, tmpCost) = Simulate(toType);
         tile.walkable = tmpWalkable;
         tile.moveCost = tmpCost;
 
         bool reachable = CheckReachableAfterChange();
 
-        // –ß‚·
+        // æˆ»ã™
         tile.walkable = fromWalkable;
         tile.moveCost = fromCost;
 
         if (!reachable)
         {
-            reason = "“üŒû‚©‚çGoal‚Ü‚Å‚ÌŒo˜H‚ª“rØ‚ê‚é‚½‚ß•s‰Â";
+            reason = "å…¥å£ã‹ã‚‰Goalã¾ã§ã®çµŒè·¯ãŒé€”åˆ‡ã‚Œã‚‹ãŸã‚ä¸å¯";
             return false;
         }
 
@@ -182,7 +227,7 @@ public class MapManager : MonoBehaviour
 
         var from = tile.type;
 
-        // À“K—piŒ©‚½–ÚŠÜ‚Şj
+        // å®Ÿé©ç”¨ï¼ˆè¦‹ãŸç›®å«ã‚€ï¼‰
         tile.ApplyType(toType);
 
         TileChanged?.Invoke(new TileChangedArgs { x = x, z = z, from = from, to = toType });
@@ -216,10 +261,10 @@ public class MapManager : MonoBehaviour
         return (true, 1f);
     }
 
-    // ===== “’B‰Â”\«ƒ`ƒFƒbƒNiBFSj=====
+    // ===== åˆ°é”å¯èƒ½æ€§ãƒã‚§ãƒƒã‚¯ï¼ˆBFSï¼‰=====
     private bool CheckReachableAfterChange()
     {
-        // ’Pˆê“üŒû‘O’ñi•¡”‚È‚ç‘S“üŒû¨Goal ‚Ì ORj
+        // å˜ä¸€å…¥å£å‰æï¼ˆè¤‡æ•°ãªã‚‰å…¨å…¥å£â†’Goal ã® ORï¼‰
         if (!WorldToGrid(entrance.position, out int sx, out int sz)) return false;
         if (!WorldToGrid(goal.position, out int gx, out int gz)) return false;
 
@@ -267,11 +312,11 @@ public class MapManager : MonoBehaviour
 //            for (int z = 0; z < mapSize; z++)
 //            {
 //                Vector3 pos = new Vector3(x * nodeSpacing, 0, z * nodeSpacing);
-//                grid[x, z] = new Node(pos, true); // ‘Sƒ}ƒX’Ês‰Â
+//                grid[x, z] = new Node(pos, true); // å…¨ãƒã‚¹é€šè¡Œå¯
 //            }
 //        }
 
-//        Debug.Log("[MapManager] ƒ}ƒbƒv¶¬Š®—¹iA*‘Î‰j");
+//        Debug.Log("[MapManager] ãƒãƒƒãƒ—ç”Ÿæˆå®Œäº†ï¼ˆA*å¯¾å¿œï¼‰");
 //    }
 
 //    public Node GetClosestNode(Vector3 position)

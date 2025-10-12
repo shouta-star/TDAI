@@ -9,6 +9,7 @@ public class MoveState : AgentBaseState
 
     public override void Execute(AgentController agent)
     {
+        // 再探索要求対応
         if (agent.needReplan)
         {
             agent.needReplan = false;
@@ -16,31 +17,38 @@ public class MoveState : AgentBaseState
             return;
         }
 
+        // 経路が無ければ探索へ戻る
         if (agent.currentPath == null || agent.currentPath.Length == 0)
         {
             agent.ChangeState(new SearchState());
             return;
         }
 
-        // ★ 現在の目標マス
+        // 現在の目標マス
         Vector3 target = agent.currentPath[agent.pathIndex];
+        Vector3 current = agent.transform.position;
 
-        // ★ 補間して移動（スナップではなく）
+        // ★Yを固定してPlane上を移動
+        target.y = current.y = 0f;
+
+        // ★マス中心への補間
         agent.transform.position = Vector3.MoveTowards(
-            agent.transform.position,
+            current,
             target,
             agent.GetData().moveSpeed * Time.deltaTime
         );
 
-        // ★ 1フレームでマス中心までスナップ移動
-        agent.transform.position = target;
-
-        // 次のマスへ進行
-        agent.pathIndex++;
-        if (agent.pathIndex >= agent.currentPath.Length)
+        // ★マス中心に到達したらスナップ＋次のマスへ
+        if (Vector3.Distance(agent.transform.position, target) < 0.01f)
         {
-            agent.ChangeState(new GoalState());
-            return;
+            agent.transform.position = target; // スナップ
+            agent.pathIndex++;
+
+            if (agent.pathIndex >= agent.currentPath.Length)
+            {
+                agent.ChangeState(new GoalState());
+                return;
+            }
         }
 
         HeatmapManager.Instance.RecordPosition(agent.transform.position);
@@ -64,7 +72,7 @@ public class MoveState : AgentBaseState
 
 //    public override void Execute(AgentController agent)
 //    {
-//        // ★ここで再探索要求に対応
+//        // 再探索要求
 //        if (agent.needReplan)
 //        {
 //            agent.needReplan = false;
@@ -72,21 +80,31 @@ public class MoveState : AgentBaseState
 //            return;
 //        }
 
+//        // 経路未設定なら探索へ
 //        if (agent.currentPath == null || agent.currentPath.Length == 0)
 //        {
 //            agent.ChangeState(new SearchState());
 //            return;
 //        }
 
+//        // 現在の目標マス
 //        Vector3 target = agent.currentPath[agent.pathIndex];
-//        agent.MoveTo(target);
 
-//        if (Vector3.Distance(agent.transform.position, target) < 0.1f)
+//        // 時間的に補間して移動
+//        agent.transform.position = Vector3.MoveTowards(
+//            agent.transform.position,
+//            target,
+//            agent.GetData().moveSpeed * Time.deltaTime
+//        );
+
+//        // 近づいたら次のマスへ
+//        if (Vector3.Distance(agent.transform.position, target) < 0.05f)
 //        {
 //            agent.pathIndex++;
 //            if (agent.pathIndex >= agent.currentPath.Length)
 //            {
 //                agent.ChangeState(new GoalState());
+//                return;
 //            }
 //        }
 
@@ -98,3 +116,104 @@ public class MoveState : AgentBaseState
 //        Debug.Log($"[{agent.name}] MoveState: 終了");
 //    }
 //}
+
+////using UnityEngine;
+
+////public class MoveState : AgentBaseState
+////{
+////    public override void Enter(AgentController agent)
+////    {
+////        Debug.Log($"[{agent.name}] MoveState: 開始");
+////    }
+
+////    public override void Execute(AgentController agent)
+////    {
+////        if (agent.needReplan)
+////        {
+////            agent.needReplan = false;
+////            agent.ChangeState(new SearchState());
+////            return;
+////        }
+
+////        if (agent.currentPath == null || agent.currentPath.Length == 0)
+////        {
+////            agent.ChangeState(new SearchState());
+////            return;
+////        }
+
+////        // ★ 現在の目標マス
+////        Vector3 target = agent.currentPath[agent.pathIndex];
+
+////        // ★ 補間して移動（スナップではなく）
+////        agent.transform.position = Vector3.MoveTowards(
+////            agent.transform.position,
+////            target,
+////            agent.GetData().moveSpeed * Time.deltaTime
+////        );
+
+////        // ★ 1フレームでマス中心までスナップ移動
+////        agent.transform.position = target;
+
+////        // 次のマスへ進行
+////        agent.pathIndex++;
+////        if (agent.pathIndex >= agent.currentPath.Length)
+////        {
+////            agent.ChangeState(new GoalState());
+////            return;
+////        }
+
+////        HeatmapManager.Instance.RecordPosition(agent.transform.position);
+////    }
+
+////    public override void Exit(AgentController agent)
+////    {
+////        Debug.Log($"[{agent.name}] MoveState: 終了");
+////    }
+////}
+
+
+//////using UnityEngine;
+
+//////public class MoveState : AgentBaseState
+//////{
+//////    public override void Enter(AgentController agent)
+//////    {
+//////        Debug.Log($"[{agent.name}] MoveState: 開始");
+//////    }
+
+//////    public override void Execute(AgentController agent)
+//////    {
+//////        // ★ここで再探索要求に対応
+//////        if (agent.needReplan)
+//////        {
+//////            agent.needReplan = false;
+//////            agent.ChangeState(new SearchState());
+//////            return;
+//////        }
+
+//////        if (agent.currentPath == null || agent.currentPath.Length == 0)
+//////        {
+//////            agent.ChangeState(new SearchState());
+//////            return;
+//////        }
+
+//////        Vector3 target = agent.currentPath[agent.pathIndex];
+//////        agent.MoveTo(target);
+
+//////        if (Vector3.Distance(agent.transform.position, target) < 0.1f)
+//////        {
+//////            agent.pathIndex++;
+//////            if (agent.pathIndex >= agent.currentPath.Length)
+//////            {
+//////                agent.ChangeState(new GoalState());
+//////            }
+//////        }
+
+//////        HeatmapManager.Instance.RecordPosition(agent.transform.position);
+//////    }
+
+//////    public override void Exit(AgentController agent)
+//////    {
+//////        Debug.Log($"[{agent.name}] MoveState: 終了");
+//////    }
+//////}

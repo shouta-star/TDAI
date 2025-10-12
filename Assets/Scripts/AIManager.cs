@@ -54,11 +54,63 @@ public class AIManager : MonoBehaviour
     }
 
 
-    // ===== A* : MapManager の軽量APIを使った実装 =====
+    //// ===== A* : MapManager の軽量APIを使った実装 =====
+    //public Vector3[] GetPath(Vector3 startWorld, Vector3 goalWorld)
+    //{
+    //    if (!map.WorldToGrid(startWorld, out int sx, out int sz)) return new[] { goalWorld };
+    //    if (!map.WorldToGrid(goalWorld, out int gx, out int gz)) return new[] { goalWorld };
+
+    //    var start = new Vector2Int(sx, sz);
+    //    var goal = new Vector2Int(gx, gz);
+
+    //    var open = new PriorityQueue<Vector2Int>();
+    //    var cameFrom = new Dictionary<Vector2Int, Vector2Int>();
+    //    var g = new Dictionary<Vector2Int, float>();
+    //    var f = new Dictionary<Vector2Int, float>();
+
+    //    g[start] = 0f;
+    //    f[start] = Heuristic(start, goal);
+    //    open.Enqueue(start, f[start]);
+
+    //    Debug.Log($"[A*] StartGrid=({sx},{sz}) GoalGrid=({gx},{gz})");
+
+    //    while (open.Count > 0)
+    //    {
+    //        var current = open.Dequeue();
+    //        if (current == goal) return ReconstructPath(cameFrom, current);
+
+    //        foreach (var nb in map.GetNeighbors(current, diagonal: false))
+    //        {
+    //            if (!map.IsWalkable(nb.x, nb.y)) continue;
+
+    //            float step = map.GetMoveCost(nb.x, nb.y); // cost=1 or 2（Slow）
+    //            float tentative = g[current] + step;
+
+    //            if (!g.TryGetValue(nb, out float old) || tentative < old)
+    //            {
+    //                cameFrom[nb] = current;
+    //                g[nb] = tentative;
+    //                f[nb] = tentative + Heuristic(nb, goal);
+    //                open.EnqueueOrDecreaseKey(nb, f[nb]);
+    //            }
+    //        }
+    //    }
+
+    //    // 見つからない場合のフォールバック（直線）
+    //    return new[] { goalWorld };
+    //}
     public Vector3[] GetPath(Vector3 startWorld, Vector3 goalWorld)
     {
-        if (!map.WorldToGrid(startWorld, out int sx, out int sz)) return new[] { goalWorld };
-        if (!map.WorldToGrid(goalWorld, out int gx, out int gz)) return new[] { goalWorld };
+        if (!map.WorldToGrid(startWorld, out int sx, out int sz))
+        {
+            Debug.LogWarning("[A*] StartGridが範囲外");
+            return new[] { startWorld }; // ★ワープ防止：ゴールに行かない
+        }
+        if (!map.WorldToGrid(goalWorld, out int gx, out int gz))
+        {
+            Debug.LogWarning("[A*] GoalGridが範囲外");
+            return new[] { startWorld };
+        }
 
         var start = new Vector2Int(sx, sz);
         var goal = new Vector2Int(gx, gz);
@@ -77,13 +129,18 @@ public class AIManager : MonoBehaviour
         while (open.Count > 0)
         {
             var current = open.Dequeue();
-            if (current == goal) return ReconstructPath(cameFrom, current);
+            if (current == goal)
+            {
+                var path = ReconstructPath(cameFrom, current);
+                Debug.Log($"[A*] Path length = {path.Length}");
+                return path;
+            }
 
-            foreach (var nb in map.GetNeighbors(current, diagonal: false))
+            foreach (var nb in map.GetNeighbors(current, diagonal: false)) // ★上下左右のみ
             {
                 if (!map.IsWalkable(nb.x, nb.y)) continue;
 
-                float step = map.GetMoveCost(nb.x, nb.y); // cost=1 or 2（Slow）
+                float step = map.GetMoveCost(nb.x, nb.y);
                 float tentative = g[current] + step;
 
                 if (!g.TryGetValue(nb, out float old) || tentative < old)
@@ -96,9 +153,10 @@ public class AIManager : MonoBehaviour
             }
         }
 
-        // 見つからない場合のフォールバック（直線）
-        return new[] { goalWorld };
+        Debug.LogWarning("[A*] 経路が見つかりませんでした。フォールバックします。");
+        return new[] { startWorld }; // ★その場に留まる
     }
+
 
     private float Heuristic(Vector2Int a, Vector2Int b)
     {
