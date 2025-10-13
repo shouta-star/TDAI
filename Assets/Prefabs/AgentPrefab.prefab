@@ -69,7 +69,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: aeaadd03852dc8844939bf89020baecd, type: 2}
+  - {fileID: 2100000, guid: a5768583f5c2e3843a16f363c579b0d2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -172,7 +172,7 @@ MonoBehaviour:
   rayLength: 2
   tileLayerMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 0
 --- !u!114 &3310749810424787390
 MonoBehaviour:
   m_ObjectHideFlags: 0
