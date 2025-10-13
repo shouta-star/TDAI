@@ -2441,6 +2441,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: TileCell (430)
       objectReference: {fileID: 0}
+    - target: {fileID: 8499831738741105533, guid: 0b9b4a3017d9ffe4c88fcaa6473d8533, type: 3}
+      propertyPath: m_Convex
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

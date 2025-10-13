@@ -100,7 +100,7 @@ namespace PathIntelligence
             OnDeath?.Invoke();
 
             if (autoDestroyOnDeath)
-                Destroy(gameObject, 2f);
+                Destroy(gameObject, 0.5f);
         }
 
         //=============================

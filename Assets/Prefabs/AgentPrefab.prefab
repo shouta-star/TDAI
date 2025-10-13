@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4087644283217985083}
   - component: {fileID: 1488228813746839890}
   - component: {fileID: -9219881909236067073}
-  - component: {fileID: -5444200897947860547}
+  - component: {fileID: 2054645341974960085}
   m_Layer: 0
   m_Name: AgentPrefab
   m_TagString: Untagged
@@ -140,12 +140,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f98fc2b3d7189a64395853d219726d7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHP: 100
-  currentHP: 100
+  maxHP: 10
+  currentHP: 10
   invincible: 0
   autoRegenPerSec: 0
   enableDebugLog: 1
-  autoDestroyOnDeath: 0
+  autoDestroyOnDeath: 1
   OnDamaged:
     m_PersistentCalls:
       m_Calls: []
@@ -155,7 +155,7 @@ MonoBehaviour:
   OnDeath:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &-5444200897947860547
+--- !u!114 &2054645341974960085
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -164,8 +164,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1684732383747433868}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: af25d9ed30eb4264faacbe4e9af76480, type: 3}
+  m_Script: {fileID: 11500000, guid: 6c705c5270f61b84e91cdc120a3093ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tile: {fileID: 4028967064036291582, guid: 0b9b4a3017d9ffe4c88fcaa6473d8533, type: 3}
+  rayStartHeight: 0.5
+  rayLength: 2
+  tileLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
   damageOnEnter: 10
