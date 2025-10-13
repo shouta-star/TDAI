@@ -50,7 +50,7 @@ public class AIManager : MonoBehaviour
             agent.SetGoal(goalPoint);
             agents.Add(agent);
         }
-        Debug.Log($"[AIManager] Spawned {agents.Count} agents.");
+        //Debug.Log($"[AIManager] Spawned {agents.Count} agents.");
     }
 
 

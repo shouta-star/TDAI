@@ -1,49 +1,38 @@
 using UnityEngine;
-using PathIntelligence; // AgentHealth がこの名前空間内の場合
 
-/// <summary>
-/// Agentが今いるタイルを取得し、Dangerタイルに入った瞬間だけダメージを与える。
-/// </summary>
-[RequireComponent(typeof(AgentHealth))]
-public class AgentTileWatcherOneShot : MonoBehaviour
+[RequireComponent(typeof(AgentTileEffectHandler))]
+public class AgentTileWatcher : MonoBehaviour
 {
-    [Header("Ray 設定")]
+    [Header("Ray設定")]
     [SerializeField] private float rayStartHeight = 0.5f;
     [SerializeField] private float rayLength = 2.0f;
-    [SerializeField] private LayerMask tileLayerMask; // 例: Tile レイヤー
+    [SerializeField] private LayerMask tileLayerMask;
 
-    [Header("ダメージ設定")]
-    [SerializeField] private float damageOnEnter = 10f;
-
-    private AgentHealth health;
-    private TileComponent lastTile; // 直前に踏んでいたタイル（参照が変わった瞬間のみ反応）
+    private AgentTileEffectHandler effectHandler;
+    private TileComponent lastTile;
 
     private void Awake()
     {
-        health = GetComponent<AgentHealth>();
+        effectHandler = GetComponent<AgentTileEffectHandler>();
     }
 
     private void Update()
     {
         var origin = transform.position + Vector3.up * rayStartHeight;
-
         if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, rayLength, tileLayerMask, QueryTriggerInteraction.Collide))
         {
             var tile = hit.collider.GetComponentInParent<TileComponent>() ?? hit.collider.GetComponent<TileComponent>();
-
-            // タイルが切り替わった瞬間だけ処理
             if (tile != null && tile != lastTile)
             {
-                if (tile.type == TileType.Danger)
-                {
-                    health.TakeDamage(damageOnEnter, "DangerTile(Enter)");
-                }
+                Debug.Log($"[TileWatcher] {gameObject.name} が {tile.type} に入りました");
+
+
+                effectHandler.OnEnterTile(tile.type);
                 lastTile = tile;
             }
         }
         else
         {
-            // 足元にタイルが無い（ジャンプ中など）は一旦リセットしても良い
             lastTile = null;
         }
     }
@@ -57,3 +46,73 @@ public class AgentTileWatcherOneShot : MonoBehaviour
     }
 #endif
 }
+
+
+//using UnityEngine;
+//using PathIntelligence; // AgentHealth がこの名前空間内の場合
+
+///// <summary>
+///// Agentが今いるタイルを取得し、Dangerタイルに入った瞬間だけダメージを与える。
+///// </summary>
+//[RequireComponent(typeof(AgentHealth))]
+//public class AgentTileWatcherOneShot : MonoBehaviour
+//{
+//    [Header("Ray 設定")]
+//    [SerializeField] private float rayStartHeight = 0.5f;
+//    [SerializeField] private float rayLength = 2.0f;
+//    [SerializeField] private LayerMask tileLayerMask; // 例: Tile レイヤー
+
+//    [Header("ダメージ設定")]
+//    [SerializeField] private float damageOnEnter = 10f;
+
+//    [Header("Slow設定")]
+//    [SerializeField, Tooltip("Slow効果で何倍にするか（0.5 = 半分）")]
+//    private float slowRatio = 0.5f;
+//    [SerializeField, Tooltip("Slow効果が続く時間（秒）")]
+//    private float slowDuration = 3f;
+
+//    private AgentHealth health;
+//    private TileComponent lastTile; // 直前に踏んでいたタイル（参照が変わった瞬間のみ反応）
+//    private Coroutine slowCoroutine;
+//    private float originalSpeed; // 元の移動速度
+
+//    private void Awake()
+//    {
+//        health = GetComponent<AgentHealth>();
+//    }
+
+//    private void Update()
+//    {
+//        var origin = transform.position + Vector3.up * rayStartHeight;
+
+//        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, rayLength, tileLayerMask, QueryTriggerInteraction.Collide))
+//        {
+//            var tile = hit.collider.GetComponentInParent<TileComponent>() ?? hit.collider.GetComponent<TileComponent>();
+
+//            // タイルが切り替わった瞬間だけ処理
+//            if (tile != null && tile != lastTile)
+//            {
+//                if (tile.type == TileType.Danger)
+//                {
+//                    health.TakeDamage(damageOnEnter, "DangerTile(Enter)");
+//                }
+
+//                lastTile = tile;
+//            }
+//        }
+//        else
+//        {
+//            // 足元にタイルが無い（ジャンプ中など）は一旦リセットしても良い
+//            lastTile = null;
+//        }
+//    }
+
+//#if UNITY_EDITOR
+//    private void OnDrawGizmosSelected()
+//    {
+//        Gizmos.color = Color.red;
+//        var origin = transform.position + Vector3.up * rayStartHeight;
+//        Gizmos.DrawLine(origin, origin + Vector3.down * rayLength);
+//    }
+//#endif
+//}
