@@ -172,7 +172,7 @@ MonoBehaviour:
   rayLength: 2
   tileLayerMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
 --- !u!114 &3310749810424787390
 MonoBehaviour:
   m_ObjectHideFlags: 0
