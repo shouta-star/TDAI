@@ -1,7 +1,7 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "AgentData", menuName = "AI/AgentData")]
-public class AgentData : ScriptableObject
+[CreateAssetMenu(fileName = "AllyData", menuName = "AI/AllyData")]
+public class AllyData : ScriptableObject
 {
     public float moveSpeed = 2f;
     public float searchInterval = 1f;
@@ -14,7 +14,7 @@ public class AgentData : ScriptableObject
     public AIType aiType;
 }
 
-public enum AIType
+public enum AllyAIType
 {
     AStar,
     BehaviorTree,
