@@ -4,7 +4,6 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    [SerializeField] private MapManager mapManager;
     [SerializeField] private AIManager aiManager;
     [SerializeField] private UIManager uiManager;
     [SerializeField] private HeatmapManager heatmapManager;
@@ -26,8 +25,6 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("[GameManager] ƒQ[ƒ€ŠJn");
 
-        //mapManager.GenerateMap();
-        mapManager.GenerateIndexFromScene();
         aiManager.SpawnAgents();
 
         totalAgents = aiManager.AgentCount;
