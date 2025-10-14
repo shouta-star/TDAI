@@ -1,4 +1,5 @@
 using UnityEngine;
+using PathIntelligence;
 
 public class AgentController : MonoBehaviour
 {
@@ -45,6 +46,18 @@ public class AgentController : MonoBehaviour
     public void MoveTo(Vector3 destination)
     {
         transform.position = Vector3.MoveTowards(transform.position, destination, data.moveSpeed * Time.deltaTime);
+    }
+
+    public void Attack(AgentController target)
+    {
+        if (target == null) return;
+
+        var health = target.GetComponent<AgentHealth>();
+        if (health != null)
+        {
+            health.TakeDamage(data.attackPower, gameObject.name);
+            Debug.Log($"[{name}] が [{target.name}] に {data.attackPower} ダメージを与えた！");
+        }
     }
 
     public void SetGoal(Transform goalTransform)

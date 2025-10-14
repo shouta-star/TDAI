@@ -10111,7 +10111,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30908b94dc274474fb885a69fc29bfc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mapManager: {fileID: 0}
   aiManager: {fileID: 1345644348}
   uiManager: {fileID: 2064279455}
   heatmapManager: {fileID: 133077073}
