@@ -3,7 +3,7 @@ using PathIntelligence; // AgentHealth参照用
 
 public class AllyController : MonoBehaviour
 {
-    [SerializeField] private AgentData data;
+    [SerializeField] private AllyData allydata;
 
     private AllyBaseState currentState;
     private AllyIdleState idleState = new AllyIdleState();
@@ -33,7 +33,7 @@ public class AllyController : MonoBehaviour
         currentState.Enter(this);
     }
 
-    public AgentData GetData() => data;
+    public AllyData GetData() => allydata;
 
     public void SetPath(Vector3[] path)
     {
@@ -46,8 +46,8 @@ public class AllyController : MonoBehaviour
         var health = enemy.GetComponent<AgentHealth>();
         if (health != null)
         {
-            health.TakeDamage(data.attackPower, gameObject.name);
-            Debug.Log($"[{name}] が [{enemy.name}] に {data.attackPower} ダメージ！");
+            health.TakeDamage(allydata.attackPower, gameObject.name);
+            Debug.Log($"[{name}] が [{enemy.name}] に {allydata.attackPower} ダメージ！");
         }
     }
 }
