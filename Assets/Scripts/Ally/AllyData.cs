@@ -11,7 +11,7 @@ public class AllyData : ScriptableObject
     public float attackInterval; //çUåÇä‘äu
 
     public Color agentColor = Color.cyan;
-    public AIType aiType;
+    public AllyAIType aiType;
 }
 
 public enum AllyAIType

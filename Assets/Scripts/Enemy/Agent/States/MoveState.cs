@@ -18,17 +18,40 @@ public class MoveState : AgentBaseState
         // ==============================
         // ‡@ “G‚ª‹ß‚­‚É‚¢‚ê‚ÎUŒ‚‚·‚é
         // ==============================
+        //var nearest = FindNearestEnemy(agent);
+        //if (nearest != null)
+        //{
+        //    float dist = Vector3.Distance(agent.transform.position, nearest.transform.position);
+        //    if (dist <= agent.GetData().attackRange && attackCooldown <= 0f)
+        //    {
+        //        agent.Attack(nearest);
+        //        attackCooldown = agent.GetData().attackInterval;
+        //        return; // UŒ‚‚µ‚½‚çˆê’U’â~
+        //    }
+        //}
         var nearest = FindNearestEnemy(agent);
         if (nearest != null)
         {
             float dist = Vector3.Distance(agent.transform.position, nearest.transform.position);
+
             if (dist <= agent.GetData().attackRange && attackCooldown <= 0f)
             {
-                agent.Attack(nearest);
-                attackCooldown = agent.GetData().attackInterval;
-                return; // UŒ‚‚µ‚½‚çˆê’U’â~
+                // --- UŒ‚”ÍˆÍ‚É“ü‚Á‚½uŠÔ‚ÉˆÊ’u‚ğŒÅ’è‚µ‚Ä’â~ ---
+                agent.transform.position = new Vector3(
+                    Mathf.Round(agent.transform.position.x * 100f) / 100f,
+                    agent.transform.position.y,
+                    Mathf.Round(agent.transform.position.z * 100f) / 100f
+                );
+
+                // --- Œo˜H‚ğ”jŠüiMoveState‚ÌˆÚ“®‚ğŠ®‘S‚É~‚ß‚éj---
+                agent.currentPath = null;
+
+                // --- AttackState ‚É‘JˆÚ‚µ‚Ä‚±‚ÌƒtƒŒ[ƒ€‚ÌˆÚ“®‚ğ’†~ ---
+                agent.ChangeState(new AttackState());
+                return; // © ‚±‚Ìreturn‚ªd—v
             }
         }
+
 
         // ==============================
         // ‡A Œo˜HÄ’Tõƒ`ƒFƒbƒN

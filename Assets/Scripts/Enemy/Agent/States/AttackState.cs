@@ -8,7 +8,11 @@ public class AttackState : AgentBaseState
     public override void Enter(AgentController agent)
     {
         attackInterval = agent.GetData().attackInterval;
-        Debug.Log($"[{agent.name}] AttackState: ŠJn");
+        Debug.Log($"[{agent.name}] AttackState: ï¿½Jï¿½n");
+
+        // çµŒè·¯ã‚’ç ´æ£„ã—ã¦ç§»å‹•åœæ­¢
+        Debug.Log("AAA");
+        agent.currentPath = null;
     }
 
     public override void Execute(AgentController agent)
@@ -38,7 +42,7 @@ public class AttackState : AgentBaseState
 
     private AgentController FindNearestEnemy(AgentController self)
     {
-        // ‰¼À‘•F‹——£‚ªÅ‚à‹ß‚¢‘¼‚ÌAgent‚ğ“G‚Æ‚İ‚È‚·
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Fï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å‚ï¿½ï¿½ß‚ï¿½ï¿½ï¿½ï¿½ï¿½Agentï¿½ï¿½Gï¿½Æ‚İ‚È‚ï¿½
         AgentController[] all = Object.FindObjectsByType<AgentController>(FindObjectsSortMode.None);
         AgentController nearest = null;
         float minDist = float.MaxValue;
@@ -58,6 +62,6 @@ public class AttackState : AgentBaseState
 
     public override void Exit(AgentController agent)
     {
-        Debug.Log($"[{agent.name}] AttackState: I—¹");
+        Debug.Log($"[{agent.name}] AttackState: ï¿½Iï¿½ï¿½");
     }
 }
