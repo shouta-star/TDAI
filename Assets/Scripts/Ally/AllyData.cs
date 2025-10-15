@@ -10,6 +10,8 @@ public class AllyData : ScriptableObject
     public float attackRange; //UŒ‚”ÍˆÍ
     public float attackInterval; //UŒ‚ŠÔŠu
 
+    public float searchRadius;   // õ“G”¼Œa
+
     public Color agentColor = Color.cyan;
     public AllyAIType aiType;
 }

@@ -12,6 +12,8 @@ public class AllyAttackState : AllyBaseState
 
     public override void Execute(AllyController ally)
     {
+        LogAllyStatus(ally, "Attacking");
+
         if (ally.targetEnemy == null)
         {
             ally.ChangeState(new AllyIdleState());

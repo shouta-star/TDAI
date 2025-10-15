@@ -9,6 +9,8 @@ public class AllyIdleState : AllyBaseState
 
     public override void Execute(AllyController ally)
     {
+        LogAllyStatus(ally, "Idling");
+
         // “G‚ğ’Tõ
         var enemy = FindNearestEnemy(ally);
         if (enemy != null)
