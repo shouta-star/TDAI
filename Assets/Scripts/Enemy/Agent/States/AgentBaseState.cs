@@ -9,13 +9,39 @@ public abstract class AgentBaseState
     // ============================
     // 共通ログ出力関数
     // ============================
+    //protected void LogAgentStatus(AgentController agent, string action)
+    //{
+    //    string stateName = GetType().Name;
+    //    string targetName = "None";
+    //    Vector3 targetPos = Vector3.zero;
+
+    //    // --- 現在追っている敵や味方を参照 ---
+    //    MonoBehaviour nearest = FindNearestEnemy(agent);
+    //    if (nearest != null)
+    //    {
+    //        targetName = nearest.name;
+    //        targetPos = ((Component)nearest).transform.position;
+    //    }
+    //    else if (agent.GetGoalPosition() != Vector3.zero)
+    //    {
+    //        targetName = "Goal";
+    //        targetPos = agent.GetGoalPosition();
+    //    }
+
+    //    Vector3 self = agent.transform.position;
+
+    //    Debug.Log(
+    //        $"[AgentLog] {agent.name} | State={stateName} | Action={action} | " +
+    //        $"Target={targetName} | TargetPos=({targetPos.x:F2},{targetPos.y:F2},{targetPos.z:F2}) | " +
+    //        $"SelfPos=({self.x:F2},{self.y:F2},{self.z:F2})"
+    //    );
+    //}
     protected void LogAgentStatus(AgentController agent, string action)
     {
         string stateName = GetType().Name;
         string targetName = "None";
         Vector3 targetPos = Vector3.zero;
 
-        // --- 現在追っている敵や味方を参照 ---
         MonoBehaviour nearest = FindNearestEnemy(agent);
         if (nearest != null)
         {
@@ -30,12 +56,13 @@ public abstract class AgentBaseState
 
         Vector3 self = agent.transform.position;
 
-        Debug.Log(
-            $"[AgentLog] {agent.name} | State={stateName} | Action={action} | " +
-            $"Target={targetName} | TargetPos=({targetPos.x:F2},{targetPos.y:F2},{targetPos.z:F2}) | " +
-            $"SelfPos=({self.x:F2},{self.y:F2},{self.z:F2})"
-        );
+        // Console 出力
+        Debug.Log($"[AgentLog] {agent.name} | State={stateName} | Action={action} | Target={targetName}");
+
+        // CSV 出力
+        CSVLogger.Log("Agent", agent.name, stateName, action, targetName, targetPos, self);
     }
+
 
     // ============================
     // 共通ターゲット検索（Agent + Ally）

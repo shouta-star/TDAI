@@ -9,13 +9,34 @@ public abstract class AllyBaseState
     // ============================
     // 共通ログ出力関数
     // ============================
+    //protected void LogAllyStatus(AllyController ally, string action)
+    //{
+    //    string stateName = GetType().Name;
+    //    string targetName = "None";
+    //    Vector3 targetPos = Vector3.zero;
+
+    //    // --- 現在の攻撃ターゲットを探索（敵 = Agent） ---
+    //    MonoBehaviour nearest = FindNearestEnemy(ally);
+    //    if (nearest != null)
+    //    {
+    //        targetName = nearest.name;
+    //        targetPos = ((Component)nearest).transform.position;
+    //    }
+
+    //    Vector3 self = ally.transform.position;
+
+    //    Debug.Log(
+    //        $"[AllyLog] {ally.name} | State={stateName} | Action={action} | " +
+    //        $"Target={targetName} | TargetPos=({targetPos.x:F2},{targetPos.y:F2},{targetPos.z:F2}) | " +
+    //        $"SelfPos=({self.x:F2},{self.y:F2},{self.z:F2})"
+    //    );
+    //}
     protected void LogAllyStatus(AllyController ally, string action)
     {
         string stateName = GetType().Name;
         string targetName = "None";
         Vector3 targetPos = Vector3.zero;
 
-        // --- 現在の攻撃ターゲットを探索（敵 = Agent） ---
         MonoBehaviour nearest = FindNearestEnemy(ally);
         if (nearest != null)
         {
@@ -25,12 +46,11 @@ public abstract class AllyBaseState
 
         Vector3 self = ally.transform.position;
 
-        Debug.Log(
-            $"[AllyLog] {ally.name} | State={stateName} | Action={action} | " +
-            $"Target={targetName} | TargetPos=({targetPos.x:F2},{targetPos.y:F2},{targetPos.z:F2}) | " +
-            $"SelfPos=({self.x:F2},{self.y:F2},{self.z:F2})"
-        );
+        Debug.Log($"[AllyLog] {ally.name} | State={stateName} | Action={action} | Target={targetName}");
+
+        CSVLogger.Log("Ally", ally.name, stateName, action, targetName, targetPos, self);
     }
+
 
     // ============================
     // 共通ターゲット探索（敵 = Agent）
