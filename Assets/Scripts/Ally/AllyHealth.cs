@@ -24,7 +24,7 @@ namespace PathIntelligence
         private void Start()
         {
             currentHP = Mathf.Clamp(currentHP, 0, maxHP);
-            Debug.Log($"[AllyHealth] {gameObject.name} 初期化: HP={currentHP}/{maxHP}");
+            //Debug.Log($"[AllyHealth] {gameObject.name} 初期化: HP={currentHP}/{maxHP}");
         }
 
         private void Update()
@@ -51,7 +51,7 @@ namespace PathIntelligence
 
             currentHP += amount;
             currentHP = Mathf.Clamp(currentHP, 0, maxHP);
-            Debug.Log($"[AllyHealth] {gameObject.name} が {source} により {amount:F1} 回復 → {currentHP:F1}/{maxHP}");
+            //Debug.Log($"[AllyHealth] {gameObject.name} が {source} により {amount:F1} 回復 → {currentHP:F1}/{maxHP}");
         }
 
         private void Die(string source)
@@ -59,7 +59,7 @@ namespace PathIntelligence
             if (isDead) return;
             isDead = true;
 
-            Debug.Log($"[AllyHealth] {gameObject.name} が死亡（原因: {source}）");
+            //Debug.Log($"[AllyHealth] {gameObject.name} が死亡（原因: {source}）");
             Destroy(gameObject, 0.5f);
         }
 

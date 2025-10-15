@@ -4,7 +4,7 @@ public class AllyIdleState : AllyBaseState
 {
     public override void Enter(AllyController ally)
     {
-        Debug.Log($"[{ally.name}] IdleState: ‘Ò‹@’†");
+        //Debug.Log($"[{ally.name}] IdleState: ‘Ò‹@’†");
     }
 
     public override void Execute(AllyController ally)

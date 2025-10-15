@@ -4,11 +4,11 @@ public class UIManager : MonoBehaviour
 {
     public void InitializeUI()
     {
-        Debug.Log("[UIManager] UI初期化完了");
+        //Debug.Log("[UIManager] UI初期化完了");
     }
 
     public void ShowResult()
     {
-        Debug.Log("[UIManager] 結果表示（仮）");
+        //Debug.Log("[UIManager] 結果表示（仮）");
     }
 }

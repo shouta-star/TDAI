@@ -4,16 +4,17 @@ public class IdleState : AgentBaseState
 {
     public override void Enter(AgentController agent)
     {
-        Debug.Log($"[{agent.name}] IdleState: 開始");
+        //Debug.Log($"[{agent.name}] IdleState: 開始");
     }
 
     public override void Execute(AgentController agent)
     {
+        LogAgentStatus(agent, "Idling");
         agent.ChangeState(new SearchState());
     }
 
     public override void Exit(AgentController agent)
     {
-        Debug.Log($"[{agent.name}] IdleState: 終了");
+        //Debug.Log($"[{agent.name}] IdleState: 終了");
     }
 }

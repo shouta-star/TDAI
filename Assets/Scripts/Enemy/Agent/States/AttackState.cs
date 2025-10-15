@@ -24,7 +24,7 @@ public class AttackState : AgentBaseState
         // var p = agent.transform.position;
         // agent.transform.position = new Vector3(Mathf.Round(p.x*100f)/100f, p.y, Mathf.Round(p.z*100f)/100f);
 
-        Debug.Log($"[{agent.name}] AttackState: Enter speed {originalMoveSpeed} -> {agent.GetData().moveSpeed}");
+        //Debug.Log($"[{agent.name}] AttackState: Enter speed {originalMoveSpeed} -> {agent.GetData().moveSpeed}");
         attackTimer = 0f;
     }
 
@@ -67,11 +67,11 @@ public class AttackState : AgentBaseState
                 if (hp != null)
                 {
                     hp.TakeDamage(agent.GetData().attackPower, agent.name);
-                    Debug.Log($"[{agent.name}] が {ally.name} に {agent.GetData().attackPower} ダメージ！");
+                    //Debug.Log($"[{agent.name}] が {ally.name} に {agent.GetData().attackPower} ダメージ！");
                 }
                 else
                 {
-                    Debug.LogWarning($"[AttackState] {ally.name} に AllyHealth が見つかりません");
+                    //Debug.LogWarning($"[AttackState] {ally.name} に AllyHealth が見つかりません");
                 }
             }
         }
@@ -82,7 +82,7 @@ public class AttackState : AgentBaseState
     {
         // 念のためここでも復元（Searchに行くケースなどの保険）
         agent.GetData().moveSpeed = originalMoveSpeed;
-        Debug.Log($"[{agent.name}] AttackState: Exit speed -> {agent.GetData().moveSpeed}");
+        //Debug.Log($"[{agent.name}] AttackState: Exit speed -> {agent.GetData().moveSpeed}");
     }
 
     private MonoBehaviour FindNearestEnemy(AgentController self)

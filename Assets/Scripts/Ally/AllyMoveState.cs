@@ -4,7 +4,7 @@ public class AllyMoveState : AllyBaseState
 {
     public override void Enter(AllyController ally)
     {
-        Debug.Log($"[{ally.name}] MoveState: 敵を追跡開始");
+        //Debug.Log($"[{ally.name}] MoveState: 敵を追跡開始");
     }
 
     public override void Execute(AllyController ally)
@@ -54,6 +54,6 @@ public class AllyMoveState : AllyBaseState
 
     public override void Exit(AllyController ally)
     {
-        Debug.Log($"[{ally.name}] MoveState: 終了");
+        //Debug.Log($"[{ally.name}] MoveState: 終了");
     }
 }

@@ -6,7 +6,7 @@ public class AllyAttackState : AllyBaseState
 
     public override void Enter(AllyController ally)
     {
-        Debug.Log($"[{ally.name}] AttackState: 攻撃開始");
+        //Debug.Log($"[{ally.name}] AttackState: 攻撃開始");
         attackTimer = 0f;
     }
 
@@ -35,6 +35,6 @@ public class AllyAttackState : AllyBaseState
 
     public override void Exit(AllyController ally)
     {
-        Debug.Log($"[{ally.name}] AttackState: 終了");
+        //Debug.Log($"[{ally.name}] AttackState: 終了");
     }
 }

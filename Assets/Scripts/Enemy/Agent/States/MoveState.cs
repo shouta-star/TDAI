@@ -6,11 +6,13 @@ public class MoveState : AgentBaseState
 
     public override void Enter(AgentController agent)
     {
-        Debug.Log($"[{agent.name}] MoveState: 開始");
+        //Debug.Log($"[{agent.name}] MoveState: 開始");
     }
 
     public override void Execute(AgentController agent)
     {
+        LogAgentStatus(agent, "Attacking");
+
         attackCooldown -= Time.deltaTime;
 
         // ----------------------------
@@ -100,7 +102,7 @@ public class MoveState : AgentBaseState
 
     public override void Exit(AgentController agent)
     {
-        Debug.Log($"[{agent.name}] MoveState: 終了");
+        //Debug.Log($"[{agent.name}] MoveState: 終了");
     }
 
     // ----------------------------

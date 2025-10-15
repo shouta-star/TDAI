@@ -24,8 +24,7 @@ namespace PathIntelligence
         private void Start()
         {
             currentHP = Mathf.Clamp(currentHP, 0, maxHP);
-            //if (enableDebugLog)
-                Debug.Log($"[AgentHealth] {gameObject.name} 初期化: HP={currentHP}/{maxHP}");
+            //Debug.Log($"[AgentHealth] {gameObject.name} 初期化: HP={currentHP}/{maxHP}");
         }
 
         private void Update()
@@ -46,7 +45,7 @@ namespace PathIntelligence
             currentHP -= Mathf.Abs(amount);
             currentHP = Mathf.Clamp(currentHP, 0, maxHP);
 
-            Debug.Log($"[AgentHealth] {gameObject.name} が {source} により {amount:F1} ダメージ → {currentHP:F1}/{maxHP}");
+            //Debug.Log($"[AgentHealth] {gameObject.name} が {source} により {amount:F1} ダメージ → {currentHP:F1}/{maxHP}");
 
             if (currentHP <= 0f)
             {
@@ -61,7 +60,7 @@ namespace PathIntelligence
             currentHP += amount;
             currentHP = Mathf.Clamp(currentHP, 0, maxHP);
 
-            Debug.Log($"[AgentHealth] {gameObject.name} が {source} により {amount:F1} 回復 → {currentHP:F1}/{maxHP}");
+            //Debug.Log($"[AgentHealth] {gameObject.name} が {source} により {amount:F1} 回復 → {currentHP:F1}/{maxHP}");
         }
 
         private void Die(string source)
@@ -69,7 +68,7 @@ namespace PathIntelligence
             if (isDead) return;
             isDead = true;
 
-            Debug.Log($"[AgentHealth] {gameObject.name} が死亡（原因: {source}）");
+            //Debug.Log($"[AgentHealth] {gameObject.name} が死亡（原因: {source}）");
 
             Destroy(gameObject, 0.5f);
         }

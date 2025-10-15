@@ -47,7 +47,7 @@ public class AllyController : MonoBehaviour
         if (health != null)
         {
             health.TakeDamage(allydata.attackPower, gameObject.name);
-            Debug.Log($"[{name}] が [{enemy.name}] に {allydata.attackPower} ダメージ！");
+            //Debug.Log($"[{name}] が [{enemy.name}] に {allydata.attackPower} ダメージ！");
         }
     }
 }

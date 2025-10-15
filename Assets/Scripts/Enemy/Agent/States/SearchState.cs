@@ -4,7 +4,9 @@ public class SearchState : AgentBaseState
 {
     public override void Enter(AgentController agent)
     {
-        Debug.Log($"[{agent.name}] SearchState: 経路探索開始");
+        //Debug.Log($"[{agent.name}] SearchState: 経路探索開始");
+
+        LogAgentStatus(agent, "Searching Path");
 
         //AIManager aiManager = GameObject.FindObjectOfType<AIManager>();
         AIManager aiManager = Object.FindFirstObjectByType<AIManager>();
@@ -22,6 +24,6 @@ public class SearchState : AgentBaseState
 
     public override void Exit(AgentController agent)
     {
-        Debug.Log($"[{agent.name}] SearchState: 終了");
+        //Debug.Log($"[{agent.name}] SearchState: 終了");
     }
 }

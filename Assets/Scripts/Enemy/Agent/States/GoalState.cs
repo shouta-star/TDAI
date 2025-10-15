@@ -4,7 +4,8 @@ public class GoalState : AgentBaseState
 {
     public override void Enter(AgentController agent)
     {
-        Debug.Log($"[{agent.name}] GoalState: ゴール到達");
+        LogAgentStatus(agent, "GoalReached");
+        //Debug.Log($"[{agent.name}] GoalState: ゴール到達");
         agent.reachedGoal = true;
         GameManager.Instance.ReportAgentGoal(agent);
     }

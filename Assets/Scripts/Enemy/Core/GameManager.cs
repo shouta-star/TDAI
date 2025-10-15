@@ -28,14 +28,14 @@ public class GameManager : MonoBehaviour
 
     public void StartGame()
     {
-        Debug.Log("[GameManager] ゲーム開始");
+        //Debug.Log("[GameManager] ゲーム開始");
 
         // --- Scene上に配置されている全Agentを自動取得 ---
         agents = FindObjectsOfType<AgentController>();
         totalAgents = agents.Length;
         completedAgents = 0;
 
-        Debug.Log($"[GameManager] シーン上のエージェント数: {totalAgents}");
+        //Debug.Log($"[GameManager] シーン上のエージェント数: {totalAgents}");
 
         // --- 各マネージャ初期化 ---
         if (aiManager == null)
