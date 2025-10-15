@@ -1,18 +1,18 @@
-ï»¿using UnityEngine;
+using UnityEngine;
 
 namespace PathIntelligence
 {
     /// <summary>
-    /// ã‚¨ãƒ¼ã‚¸ã‚§ãƒ³ãƒˆã®HPã‚’ç®¡ç†ã™ã‚‹ç´”ç²‹ãªã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã€‚
-    /// ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚„å›å¾©ã®å‡¦ç†ã¯å¤–éƒ¨ã‚¹ã‚¯ãƒªãƒ—ãƒˆï¼ˆä¾‹ï¼šAgentTileEffectHandlerï¼‰ãŒå‘¼ã³å‡ºã™ã€‚
+    /// –¡•ûƒ†ƒjƒbƒgê—p‚ÌHPŠÇ—ƒRƒ“ƒ|[ƒlƒ“ƒgB
+    /// ƒCƒxƒ“ƒg‹@”\‚âƒCƒ“ƒXƒyƒNƒ^[˜AŒg‚Í‚½‚È‚¢B
     /// </summary>
-    public class AgentHealth : MonoBehaviour
+    public class AllyHealth : MonoBehaviour
     {
-        [Header("åŸºæœ¬ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿")]
+        [Header("Šî–{ƒpƒ‰ƒ[ƒ^")]
         [SerializeField] private float maxHP = 100f;
         [SerializeField] private float currentHP = 100f;
         [SerializeField] private bool invincible = false;
-        [Tooltip("æ¯ç§’ã®è‡ªå‹•å›å¾©é‡ï¼ˆ0ã§ç„¡åŠ¹ï¼‰")]
+        [Tooltip("–ˆ•b‚Ì©“®‰ñ•œ—Êi0‚Å–³Œøj")]
         [SerializeField] private float autoRegenPerSec = 0f;
 
         private bool isDead = false;
@@ -24,34 +24,25 @@ namespace PathIntelligence
         private void Start()
         {
             currentHP = Mathf.Clamp(currentHP, 0, maxHP);
-            //if (enableDebugLog)
-                Debug.Log($"[AgentHealth] {gameObject.name} åˆæœŸåŒ–: HP={currentHP}/{maxHP}");
+            Debug.Log($"[AllyHealth] {gameObject.name} ‰Šú‰»: HP={currentHP}/{maxHP}");
         }
 
         private void Update()
         {
             if (!isDead && autoRegenPerSec > 0f && currentHP < maxHP)
-            {
                 Heal(autoRegenPerSec * Time.deltaTime);
-            }
         }
 
-        //=============================
-        // HPæ“ä½œãƒ¡ã‚½ãƒƒãƒ‰
-        //=============================
         public void TakeDamage(float amount, string source = "Unknown")
         {
             if (isDead || invincible) return;
 
             currentHP -= Mathf.Abs(amount);
             currentHP = Mathf.Clamp(currentHP, 0, maxHP);
-
-            Debug.Log($"[AgentHealth] {gameObject.name} ãŒ {source} ã«ã‚ˆã‚Š {amount:F1} ãƒ€ãƒ¡ãƒ¼ã‚¸ â†’ {currentHP:F1}/{maxHP}");
+            Debug.Log($"[AllyHealth] {gameObject.name} ‚ª {source} ‚É‚æ‚è {amount:F1} ƒ_ƒ[ƒW ¨ {currentHP:F1}/{maxHP}");
 
             if (currentHP <= 0f)
-            {
                 Die(source);
-            }
         }
 
         public void Heal(float amount, string source = "Unknown")
@@ -60,8 +51,7 @@ namespace PathIntelligence
 
             currentHP += amount;
             currentHP = Mathf.Clamp(currentHP, 0, maxHP);
-
-            Debug.Log($"[AgentHealth] {gameObject.name} ãŒ {source} ã«ã‚ˆã‚Š {amount:F1} å›å¾© â†’ {currentHP:F1}/{maxHP}");
+            Debug.Log($"[AllyHealth] {gameObject.name} ‚ª {source} ‚É‚æ‚è {amount:F1} ‰ñ•œ ¨ {currentHP:F1}/{maxHP}");
         }
 
         private void Die(string source)
@@ -69,8 +59,7 @@ namespace PathIntelligence
             if (isDead) return;
             isDead = true;
 
-            Debug.Log($"[AgentHealth] {gameObject.name} ãŒæ­»äº¡ï¼ˆåŸå› : {source}ï¼‰");
-
+            Debug.Log($"[AllyHealth] {gameObject.name} ‚ª€–SiŒ´ˆö: {source}j");
             Destroy(gameObject, 0.5f);
         }
 

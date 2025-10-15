@@ -605,6 +605,10 @@ PrefabInstance:
       propertyPath: currentHP
       value: 15
       objectReference: {fileID: 0}
+    - target: {fileID: -9219881909236067073, guid: 2fa6f8c874cf5da4e881de8c78e3c0f2, type: 3}
+      propertyPath: invincible
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1684732383747433868, guid: 2fa6f8c874cf5da4e881de8c78e3c0f2, type: 3}
       propertyPath: m_Name
       value: AgentPrefab
