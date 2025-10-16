@@ -17,7 +17,5 @@ public class AgentData : ScriptableObject
 public enum AIType
 {
     AStar,
-    BehaviorTree,
-    Utility,
-    GOAP
+    DStar
 }
