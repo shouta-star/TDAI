@@ -1,0 +1,4 @@
+Frame,Time,Object,Type,State,Action,Target,TargetX,TargetY,TargetZ,SelfX,SelfY,SelfZ,AIType
+1,0.00,AgentPrefab,Agent,IdleState,Idling,Goal,20.00,0.00,20.00,0.00,0.00,0.00,AStar
+1,0.00,AgentPrefab,Agent,SearchState,Searching Path,Goal,20.00,0.00,20.00,0.00,0.00,0.00,AStar
+2,0.02,AgentPrefab,Agent,MoveState,Attacking,Goal,20.00,0.00,20.00,0.00,0.00,0.00,AStar
