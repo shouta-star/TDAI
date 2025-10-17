@@ -885,6 +885,7 @@ MonoBehaviour:
   maxNodes: 1000
   reachThreshold: 1
   directionResolution: 72
+  processInterval: 0.02
 --- !u!4 &1345644349
 Transform:
   m_ObjectHideFlags: 0

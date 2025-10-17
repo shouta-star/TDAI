@@ -12,7 +12,8 @@ public abstract class AgentBaseState
     protected void LogAgentStatus(AgentController agent, string action)
     {
         string stateName = GetType().Name;
-        string targetName = "None";
+        //string targetName = "None";
+        string targetName = "Goal";
         Vector3 targetPos = Vector3.zero;
 
         // --- 現在追っている敵や味方を参照 ---
@@ -39,15 +40,37 @@ public abstract class AgentBaseState
         );
 
         // CSV 出力
+        //CSVLogger.Log(
+        //    "Agent",
+        //    agent.name,
+        //    stateName,
+        //    action,
+        //    targetName,
+        //    targetPos,
+        //    self,
+        //    aiType.ToString() // ← 追加（AITypeをCSVへ出力）
+        //);
+        //CSVLogger.Log(
+        //    agent.name,
+        //    "MoveState",
+        //    "Moving",
+        //    agent.GetData().aiType.ToString(),
+        //    "Goal",
+        //    agent.GetGoalPosition(),          // ★ Target
+        //    agent.transform.position,         // ★ Current（現フレーム）
+        //    agent.GetNextPosition(),          // ★ Next（次フレーム）
+        //    agent.GetData().aiType.ToString()
+        //);
         CSVLogger.Log(
-            "Agent",
-            agent.name,
-            stateName,
-            action,
-            targetName,
-            targetPos,
-            self,
-            aiType.ToString() // ← 追加（AITypeをCSVへ出力）
+            "Agent",                          // Type
+            agent.name,                       // Object（例: AgentPrefab）
+            stateName,                        // State（例: MoveState / IdleState）
+            action,                           // Action（例: Moving / Idling）
+            targetName,                       // Target
+            targetPos,                        // TargetXYZ
+            agent.transform.position,         // CurrentXYZ（必要なら beforeMove に差し替え）
+            agent.GetNextPosition(),          // NextXYZ（MoveState後などで更新済みなら）
+            agent.GetData().aiType.ToString() // AIType（例: DStar）
         );
     }
 

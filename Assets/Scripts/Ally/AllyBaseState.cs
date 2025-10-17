@@ -31,12 +31,43 @@ public abstract class AllyBaseState
     //        $"SelfPos=({self.x:F2},{self.y:F2},{self.z:F2})"
     //    );
     //}
+    //protected void LogAllyStatus(AllyController ally, string action)
+    //{
+    //    string stateName = GetType().Name;
+    //    string targetName = "None";
+    //    Vector3 targetPos = Vector3.zero;
+
+    //    MonoBehaviour nearest = FindNearestEnemy(ally);
+    //    if (nearest != null)
+    //    {
+    //        targetName = nearest.name;
+    //        targetPos = ((Component)nearest).transform.position;
+    //    }
+
+    //    Vector3 self = ally.transform.position;
+
+    //    Debug.Log($"[AllyLog] {ally.name} | State={stateName} | Action={action} | Target={targetName}");
+
+    //    //CSVLogger.Log("Ally", ally.name, stateName, action, targetName, targetPos, self);
+    //    CSVLogger.Log(
+    //        "Ally",            // type
+    //        ally.name,         // name
+    //        stateName,         // state
+    //        action,            // action
+    //        targetName,        // target（敵名 or None）
+    //        targetPos,         // Target座標（敵の位置）
+    //        ally.transform.position,    // Current
+    //        ally.GetNextPosition()      // Next（次フレーム位置）
+    //                            // ,"Ally"          // ←もしAITypeを追加したい場合はコメント解除
+    //    );
+    //}
     protected void LogAllyStatus(AllyController ally, string action)
     {
         string stateName = GetType().Name;
         string targetName = "None";
         Vector3 targetPos = Vector3.zero;
 
+        // --- 最も近い敵（Agent）を探す ---
         MonoBehaviour nearest = FindNearestEnemy(ally);
         if (nearest != null)
         {
@@ -44,12 +75,25 @@ public abstract class AllyBaseState
             targetPos = ((Component)nearest).transform.position;
         }
 
-        Vector3 self = ally.transform.position;
+        Vector3 current = ally.transform.position;
+        Vector3 next = current; // ★ nextPosition未実装なら現位置を使う（後で ally.GetNextPosition() に変更可）
 
         Debug.Log($"[AllyLog] {ally.name} | State={stateName} | Action={action} | Target={targetName}");
 
-        CSVLogger.Log("Ally", ally.name, stateName, action, targetName, targetPos, self);
+        // ★ Target / Current / Next の3座標をCSV出力
+        CSVLogger.Log(
+            "Ally",            // type
+            ally.name,         // name
+            stateName,         // state
+            action,            // action
+            targetName,        // target（敵名 or None）
+            targetPos,         // Target座標（敵の位置）
+            current,           // Current（現フレーム位置）
+            next               // Next（次フレーム想定位置。現状はcurrentと同じ）
+                               // ,"Ally"          // ←もしAITypeを追加したい場合はコメント解除
+        );
     }
+
 
 
     // ============================

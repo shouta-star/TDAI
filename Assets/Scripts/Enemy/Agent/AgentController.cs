@@ -25,9 +25,14 @@ public class AgentController : MonoBehaviour
     private float defaultMoveSpeed;
     private AIManager aiManager;
 
+    private Vector3 nextPosition;
+    public Vector3 GetNextPosition() => nextPosition;
+
     private void Start()
     {
         //return;
+
+        nextPosition = transform.position;
 
         runtimeData = Instantiate(data);
         defaultMoveSpeed = runtimeData.moveSpeed;
@@ -89,6 +94,9 @@ public class AgentController : MonoBehaviour
             }
             return;
         }
+
+        // š‚±‚±‚Å•Û‘¶
+        nextPosition = next;
 
         transform.position = next;
     }
@@ -166,12 +174,25 @@ public class AgentController : MonoBehaviour
             Debug.LogWarning($"[AgentController:{name}] Œo˜H‚ªæ“¾‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½B");
             return;
         }
+        //var path = aiManager.GetPath(start, goalPos, runtimeData.aiType);
+        //if (path == null || path.Length <= 1)
+        //{
+        //    Debug.LogWarning($"[AgentController:{name}] Œo˜H‚ª’Z‚·‚¬‚é‚½‚ßÄs");
+        //    StartCoroutine(RetryRepath()); // 0.5•bŒã‚È‚Ç‚ÉÄ’Tõ
+        //    return;
+        //}
 
         SetPath(path);
         needReplan = false;
         reachedGoal = false;
         Debug.Log($"[AgentController:{name}] RecalculatePath ¨ {runtimeData.aiType}, nodes={path.Length}");
     }
+
+    //private IEnumerator RetryRepath()
+    //{
+    //    yield return new WaitForSeconds(0.5f);
+    //    RecalculatePath();
+    //}
 
     public AgentData GetData() => runtimeData;
 

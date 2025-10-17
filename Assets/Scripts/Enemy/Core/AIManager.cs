@@ -63,6 +63,22 @@ public class AIManager : MonoBehaviour
     // ===========================================================
     // 動的障害物管理
     // ===========================================================
+    //public void OnDynamicObstacleChanged(Vector3 position, float radius, bool isBlocked)
+    //{
+    //    position.y = 0f;
+
+    //    if (isBlocked)
+    //        obstacles.Add(new Obstacle { pos = position, radius = radius });
+    //    else
+    //        obstacles.RemoveAll(o => Vector3.Distance(o.pos, position) < 0.01f);
+
+    //    foreach (var agent in FindObjectsOfType<AgentController>())
+    //    {
+    //        var data = agent.GetData();
+    //        if (data != null && data.aiType == AIType.DStar)
+    //            agent.OnDynamicMapChanged(position, isBlocked);
+    //    }
+    //}
     public void OnDynamicObstacleChanged(Vector3 position, float radius, bool isBlocked)
     {
         position.y = 0f;
@@ -72,13 +88,20 @@ public class AIManager : MonoBehaviour
         else
             obstacles.RemoveAll(o => Vector3.Distance(o.pos, position) < 0.01f);
 
+        // --- D* は即再探索命令 ---
         foreach (var agent in FindObjectsOfType<AgentController>())
         {
             var data = agent.GetData();
-            if (data != null && data.aiType == AIType.DStar)
-                agent.OnDynamicMapChanged(position, isBlocked);
+            if (data == null) continue;
+
+            if (data.aiType == AIType.DStar)
+            {
+                Debug.Log($"[AIManager] D* Agent {agent.name} に動的障害物の通知 → 再探索");
+                agent.RecalculatePath();
+            }
         }
     }
+
 
     private bool IsObstacleBetween(Vector3 a, Vector3 b)
     {
@@ -117,6 +140,17 @@ public class AIManager : MonoBehaviour
     private Vector3[] GetPathAStar(Vector3 startWorld, Vector3 goalWorld)
     {
         startWorld.y = goalWorld.y = 0f;
+
+        //// ★ 壁チェックを先に行う
+        //if (IsObstacleBetween(startWorld, goalWorld))
+        //{
+        //    // 直線上に障害物がある場合は即リターンせず通常探索に進む
+        //}
+        //else if (Vector3.Distance(startWorld, goalWorld) <= reachThreshold)
+        //{
+        //    return new[] { goalWorld };
+        //}
+
         if (Vector3.Distance(startWorld, goalWorld) <= reachThreshold)
             return new[] { goalWorld };
 
