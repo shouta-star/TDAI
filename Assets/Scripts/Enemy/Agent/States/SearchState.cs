@@ -26,6 +26,7 @@ public class SearchState : AgentBaseState
 
         // AgentController‚É“‡‚³‚ê‚½Œo˜H’TõŒÄ‚Ño‚µ‚ğg—p
         agent.RecalculatePath();
+        //agent.RequestPathRecalc();
 
         // Œo˜H‚ªŒ©‚Â‚©‚Á‚½‚çMoveState‚Ö‘JˆÚ
         agent.ChangeState(new MoveState());

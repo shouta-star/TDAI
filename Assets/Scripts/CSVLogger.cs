@@ -17,6 +17,8 @@ public static class CSVLogger
     public static void Log(string type, string name, string state, string action,
                            string target, Vector3 targetPos, Vector3 selfPos, string aiType)
     {
+        //return;
+
         if (logFilePath == null)
         {
             const string kCustomRoot = @"D:\AloneGitHub\TDAI\DebugLogs";

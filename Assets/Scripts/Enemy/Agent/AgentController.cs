@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using PathIntelligence;
 
 public class AgentController : MonoBehaviour
@@ -26,6 +27,8 @@ public class AgentController : MonoBehaviour
 
     private void Start()
     {
+        //return;
+
         runtimeData = Instantiate(data);
         defaultMoveSpeed = runtimeData.moveSpeed;
 
