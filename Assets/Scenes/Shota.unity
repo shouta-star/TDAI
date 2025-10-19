@@ -836,7 +836,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbcc2b1cb1d6e4043bd8c0cdb19133a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  switchInterval: 1
+  switchInterval: 5
   blockRadius: 3
 --- !u!1 &1274392385
 GameObject:
