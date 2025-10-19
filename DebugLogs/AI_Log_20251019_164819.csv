@@ -1,0 +1,5 @@
+Frame,Time,Object,Type,State,Action,Target,TargetX,TargetY,TargetZ,CurrentX,CurrentY,CurrentZ,NextX,NextY,NextZ,AIType
+5,0.19,AgentPrefab,Agent,IdleState,Idling,AllyPrefab,9.00,0.00,17.00,0.00,0.00,0.00,0.00,0.00,0.00,AStar
+5,0.19,AgentPrefab,Agent,SearchState,Searching Path,AllyPrefab,9.00,0.00,17.00,0.00,0.00,0.00,0.00,0.00,0.00,AStar
+6,0.38,AgentPrefab,Agent,MoveState,Moving,AllyPrefab,9.00,0.00,17.00,0.00,0.00,0.00,0.00,0.00,0.00,AStar
+6,0.38,AgentPrefab,Agent,GoalState,GoalReached,AllyPrefab,9.00,0.00,17.00,0.00,0.00,0.00,0.00,0.00,0.00,AStar

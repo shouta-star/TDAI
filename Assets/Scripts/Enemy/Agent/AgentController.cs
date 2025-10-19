@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using PathIntelligence;
 
+[ExecuteAlways]
 public class AgentController : MonoBehaviour
 {
     [SerializeField] private AgentData data;
@@ -27,6 +28,10 @@ public class AgentController : MonoBehaviour
 
     private Vector3 nextPosition;
     public Vector3 GetNextPosition() => nextPosition;
+
+    // 経路のバックアップ（停止中表示用）
+    private static Vector3[] lastAStarPath;
+    private static Vector3[] lastDStarPath;
 
     private void Start()
     {
@@ -79,19 +84,26 @@ public class AgentController : MonoBehaviour
             runtimeData.moveSpeed * Time.deltaTime
         );
 
+        //// ★ 移動前に障害物判定
+        //if (AIManager.Instance != null && AIManager.Instance.HasObstacleBetween(current, next))
+        //{
+        //    Debug.Log($"[{name}] 進行方向に障害物あり → {(runtimeData.aiType == AIType.DStar ? "即リルート" : "停止")}");
+
+        //    if (runtimeData.aiType == AIType.DStar)
+        //    {
+        //        RecalculatePath(); // D*なら即リルート
+        //    }
+        //    else
+        //    {
+        //        StopMovement();    // A*なら停止（次の再探索待ち）
+        //    }
+        //    return;
+        //}
         // ★ 移動前に障害物判定
         if (AIManager.Instance != null && AIManager.Instance.HasObstacleBetween(current, next))
         {
-            Debug.Log($"[{name}] 進行方向に障害物あり → {(runtimeData.aiType == AIType.DStar ? "即リルート" : "停止")}");
-
-            if (runtimeData.aiType == AIType.DStar)
-            {
-                RecalculatePath(); // D*なら即リルート
-            }
-            else
-            {
-                StopMovement();    // A*なら停止（次の再探索待ち）
-            }
+            Debug.Log($"[{name}] 進行方向に障害物あり → 経路再計算開始 ({runtimeData.aiType})");
+            RecalculatePath(); // A*・D*どちらも再計算
             return;
         }
 
@@ -206,6 +218,68 @@ public class AgentController : MonoBehaviour
     {
         runtimeData.moveSpeed = defaultMoveSpeed;
         Debug.Log($"[{name}] RestoreDefaultSpeed: speed → {runtimeData.moveSpeed}");
+    }
+
+    //private void OnDrawGizmos()
+    //{
+    //    if (currentPath == null || currentPath.Length < 2) return;
+
+    //    // A*とD*で色を分ける
+    //    Gizmos.color = Color.yellow;
+    //    if (Application.isPlaying)
+    //    {
+    //        var data = GetData();
+    //        if (data != null)
+    //        {
+    //            Gizmos.color = (data.aiType == AIType.DStar) ? Color.cyan : Color.yellow;
+    //        }
+    //    }
+
+    //    for (int i = 0; i < currentPath.Length - 1; i++)
+    //    {
+    //        Gizmos.DrawLine(currentPath[i], currentPath[i + 1]);
+    //    }
+    //}
+    private void OnDrawGizmos()
+    {
+        // --- 再生中 ---
+        if (Application.isPlaying)
+        {
+            if (currentPath != null && currentPath.Length >= 2)
+            {
+                var data = GetData();
+                if (data != null)
+                {
+                    Gizmos.color = (data.aiType == AIType.DStar) ? Color.cyan : Color.yellow;
+
+                    for (int i = 0; i < currentPath.Length - 1; i++)
+                        Gizmos.DrawLine(currentPath[i], currentPath[i + 1]);
+
+                    // ★停止後も残すために保存
+                    if (data.aiType == AIType.DStar)
+                        lastDStarPath = (Vector3[])currentPath.Clone();
+                    else
+                        lastAStarPath = (Vector3[])currentPath.Clone();
+                }
+            }
+        }
+        // --- 停止中（最後の経路を表示） ---
+        else
+        {
+            if (lastAStarPath != null && lastAStarPath.Length >= 2)
+            {
+                Gizmos.color = Color.yellow;
+                for (int i = 0; i < lastAStarPath.Length - 1; i++)
+                    Gizmos.DrawLine(lastAStarPath[i], lastAStarPath[i + 1]);
+            }
+
+            if (lastDStarPath != null && lastDStarPath.Length >= 2)
+            {
+                Gizmos.color = Color.cyan;
+                for (int i = 0; i < lastDStarPath.Length - 1; i++)
+                    Gizmos.DrawLine(lastDStarPath[i], lastDStarPath[i + 1]);
+            }
+        }
     }
 }
 

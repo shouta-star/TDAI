@@ -7,7 +7,7 @@ public class AIManager : MonoBehaviour
     [SerializeField] private float stepSize = 1.0f;
     [SerializeField] private int maxNodes = 1000;
     [SerializeField] private float reachThreshold = 1f;
-    [SerializeField, Range(8, 180)] private int directionResolution = 72;
+    [SerializeField, Range(8, 180)] private int directionResolution;
 
     [Header("Path Request Settings")]
     [SerializeField] private float processInterval = 0.02f; // Œo˜Hˆ—ŠÔŠu(•b)
