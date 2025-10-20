@@ -17,5 +17,6 @@ public class AgentData : ScriptableObject
 public enum AIType
 {
     AStar,
-    DStar
+    DStar,
+    NavMesh
 }

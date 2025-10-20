@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class AIManager : MonoBehaviour
 {
@@ -131,6 +132,8 @@ public class AIManager : MonoBehaviour
         {
             case AIType.DStar:
                 return GetPathDStar(startWorld, goalWorld);
+            case AIType.NavMesh:
+                return GetPathNavMesh(startWorld, goalWorld);
             case AIType.AStar:
             default:
                 return GetPathAStar(startWorld, goalWorld);
@@ -212,6 +215,28 @@ public class AIManager : MonoBehaviour
         }
         return path;
     }
+
+    private Vector3[] GetPathNavMesh(Vector3 startWorld, Vector3 goalWorld)
+    {
+        NavMeshPath navPath = new NavMeshPath();
+
+        // NavMeshAgentがいなくても経路だけ算出できる
+        if (!NavMesh.CalculatePath(startWorld, goalWorld, NavMesh.AllAreas, navPath))
+        {
+            Debug.LogWarning("[NavMesh] 経路計算に失敗しました。");
+            return new[] { goalWorld };
+        }
+
+        if (navPath.corners == null || navPath.corners.Length == 0)
+        {
+            Debug.LogWarning("[NavMesh] 経路コーナーが見つかりません。");
+            return new[] { goalWorld };
+        }
+
+        Debug.Log($"[NavMesh] 経路生成: {navPath.corners.Length} 点");
+        return navPath.corners;
+    }
+
 
     private class Node
     {
