@@ -195,9 +195,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbcc2b1cb1d6e4043bd8c0cdb19133a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  switchInterval: 1.5
-  blockRadius: 2
-  isBlocked: 1
+  interval: 2
+  radius: 2
+  isBlocked: 0
 --- !u!65 &221136855
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -319,9 +319,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbcc2b1cb1d6e4043bd8c0cdb19133a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  switchInterval: 1.5
-  blockRadius: 1
-  isBlocked: 1
+  interval: 3
+  radius: 2
+  isBlocked: 0
 --- !u!65 &228704028
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -978,9 +978,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbcc2b1cb1d6e4043bd8c0cdb19133a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  switchInterval: 2
-  blockRadius: 2
-  isBlocked: 1
+  interval: 3
+  radius: 2
+  isBlocked: 0
 --- !u!1 &1274392385
 GameObject:
   m_ObjectHideFlags: 0
