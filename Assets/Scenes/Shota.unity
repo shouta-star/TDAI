@@ -197,6 +197,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   switchInterval: 1.5
   blockRadius: 2
+  isBlocked: 1
 --- !u!65 &221136855
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -320,6 +321,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   switchInterval: 1.5
   blockRadius: 1
+  isBlocked: 1
 --- !u!65 &228704028
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -770,9 +772,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30908b94dc274474fb885a69fc29bfc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  aiManager: {fileID: 1345644348}
-  uiManager: {fileID: 2064279455}
-  heatmapManager: {fileID: 133077073}
+  autoStart: 1
 --- !u!4 &577739584
 Transform:
   m_ObjectHideFlags: 0
@@ -806,7 +806,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2147694342126131049, guid: aef8380cad8863d4398e1a9c9c1a12a6, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3809036779229149896, guid: aef8380cad8863d4398e1a9c9c1a12a6, type: 3}
       propertyPath: m_LocalPosition.x
@@ -980,6 +980,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   switchInterval: 2
   blockRadius: 2
+  isBlocked: 1
 --- !u!1 &1274392385
 GameObject:
   m_ObjectHideFlags: 0
@@ -1146,11 +1147,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91615a66798cd8a4f84edd9757c4e203, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stepSize: 1
-  maxNodes: 1000
+  gridSize: 1
   reachThreshold: 1
-  directionResolution: 36
-  processInterval: 0.02
+  stepSize: 1
+  showGizmos: 1
 --- !u!4 &1345644349
 Transform:
   m_ObjectHideFlags: 0

@@ -29,6 +29,9 @@ public class AgentController : MonoBehaviour
     private Vector3 nextPosition;
     public Vector3 GetNextPosition() => nextPosition;
 
+    // AgentController 内のフィールド群に追加
+    private Vector3[] initialAStarPath;  // ← A*で最初に得た経路のスナップショット
+
     // 経路のバックアップ（停止中表示用）
     private static Vector3[] lastAStarPath;
     private static Vector3[] lastDStarPath;
@@ -36,6 +39,19 @@ public class AgentController : MonoBehaviour
     private void Start()
     {
         //return;
+
+        // すでに他スクリプトから設定済みでなければ、自動検索
+        if (goal == null)
+        {
+            GameObject goalObj = GameObject.FindWithTag("Goal");
+            if (goalObj == null)
+                goalObj = GameObject.Find("Goal");
+
+            if (goalObj != null)
+                goal = goalObj.transform;
+            else
+                Debug.LogWarning($"[{name}] Goal オブジェクトが見つかりません。");
+        }
 
         nextPosition = transform.position;
 
@@ -103,7 +119,7 @@ public class AgentController : MonoBehaviour
         if (AIManager.Instance != null && AIManager.Instance.HasObstacleBetween(current, next))
         {
             Debug.Log($"[{name}] 進行方向に障害物あり → 経路再計算開始 ({runtimeData.aiType})");
-            RecalculatePath(); // A*・D*どちらも再計算
+            //RecalculatePath(); // A*・D*どちらも再計算
             return;
         }
 
@@ -140,8 +156,18 @@ public class AgentController : MonoBehaviour
 
     public void SetPath(Vector3[] path)
     {
+        //currentPath = path;
+        //pathIndex = 0;
+
         currentPath = path;
         pathIndex = 0;
+
+        // A* のとき、初回だけ保存（以後は上書きしない）
+        var d = GetData();
+        if (d != null && d.aiType == AIType.AStar && initialAStarPath == null && path != null && path.Length >= 2)
+        {
+            initialAStarPath = (Vector3[])path.Clone();
+        }
     }
 
     // ===========================================================
@@ -222,64 +248,90 @@ public class AgentController : MonoBehaviour
 
     //private void OnDrawGizmos()
     //{
-    //    if (currentPath == null || currentPath.Length < 2) return;
-
-    //    // A*とD*で色を分ける
-    //    Gizmos.color = Color.yellow;
+    //    // --- 再生中 ---
     //    if (Application.isPlaying)
     //    {
-    //        var data = GetData();
-    //        if (data != null)
+    //        if (currentPath != null && currentPath.Length >= 2)
     //        {
-    //            Gizmos.color = (data.aiType == AIType.DStar) ? Color.cyan : Color.yellow;
+    //            var data = GetData();
+    //            if (data != null)
+    //            {
+    //                Gizmos.color = (data.aiType == AIType.DStar) ? Color.cyan : Color.yellow;
+
+    //                for (int i = 0; i < currentPath.Length - 1; i++)
+    //                    Gizmos.DrawLine(currentPath[i], currentPath[i + 1]);
+
+    //                // ★停止後も残すために保存
+    //                if (data.aiType == AIType.DStar)
+    //                    lastDStarPath = (Vector3[])currentPath.Clone();
+    //                else
+    //                    lastAStarPath = (Vector3[])currentPath.Clone();
+    //            }
     //        }
     //    }
-
-    //    for (int i = 0; i < currentPath.Length - 1; i++)
+    //    // --- 停止中（最後の経路を表示） ---
+    //    else
     //    {
-    //        Gizmos.DrawLine(currentPath[i], currentPath[i + 1]);
+    //        if (lastAStarPath != null && lastAStarPath.Length >= 2)
+    //        {
+    //            Gizmos.color = Color.yellow;
+    //            for (int i = 0; i < lastAStarPath.Length - 1; i++)
+    //                Gizmos.DrawLine(lastAStarPath[i], lastAStarPath[i + 1]);
+    //        }
+
+    //        if (lastDStarPath != null && lastDStarPath.Length >= 2)
+    //        {
+    //            Gizmos.color = Color.cyan;
+    //            for (int i = 0; i < lastDStarPath.Length - 1; i++)
+    //                Gizmos.DrawLine(lastDStarPath[i], lastDStarPath[i + 1]);
+    //        }
     //    }
     //}
     private void OnDrawGizmos()
     {
-        // --- 再生中 ---
+        // --- 実行中（Play中） ---
         if (Application.isPlaying)
         {
-            if (currentPath != null && currentPath.Length >= 2)
-            {
-                var data = GetData();
-                if (data != null)
-                {
-                    Gizmos.color = (data.aiType == AIType.DStar) ? Color.cyan : Color.yellow;
+            var d = GetData();
 
-                    for (int i = 0; i < currentPath.Length - 1; i++)
-                        Gizmos.DrawLine(currentPath[i], currentPath[i + 1]);
-
-                    // ★停止後も残すために保存
-                    if (data.aiType == AIType.DStar)
-                        lastDStarPath = (Vector3[])currentPath.Clone();
-                    else
-                        lastAStarPath = (Vector3[])currentPath.Clone();
-                }
-            }
-        }
-        // --- 停止中（最後の経路を表示） ---
-        else
-        {
-            if (lastAStarPath != null && lastAStarPath.Length >= 2)
+            // ★ A* は「初回経路」を常に表示
+            if (d != null && d.aiType == AIType.AStar && initialAStarPath != null && initialAStarPath.Length >= 2)
             {
                 Gizmos.color = Color.yellow;
-                for (int i = 0; i < lastAStarPath.Length - 1; i++)
-                    Gizmos.DrawLine(lastAStarPath[i], lastAStarPath[i + 1]);
+                for (int i = 0; i < initialAStarPath.Length - 1; i++)
+                    Gizmos.DrawLine(initialAStarPath[i], initialAStarPath[i + 1]);
             }
 
-            if (lastDStarPath != null && lastDStarPath.Length >= 2)
+            // 既存の「現在の経路」描画（D*やNavMeshの可視化用にそのまま残す）
+            if (currentPath != null && currentPath.Length >= 2)
             {
-                Gizmos.color = Color.cyan;
-                for (int i = 0; i < lastDStarPath.Length - 1; i++)
-                    Gizmos.DrawLine(lastDStarPath[i], lastDStarPath[i + 1]);
+                if (d != null && d.aiType == AIType.DStar) Gizmos.color = Color.cyan;
+                else Gizmos.color = Color.yellow;
+
+                for (int i = 0; i < currentPath.Length - 1; i++)
+                    Gizmos.DrawLine(currentPath[i], currentPath[i + 1]);
             }
+            return;
         }
+
+        // --- 停止中（エディタ停止時は最後の経路を表示：既存処理を維持） ---
+        if (lastAStarPath != null && lastAStarPath.Length >= 2)
+        {
+            Gizmos.color = Color.yellow;
+            for (int i = 0; i < lastAStarPath.Length - 1; i++)
+                Gizmos.DrawLine(lastAStarPath[i], lastAStarPath[i + 1]);
+        }
+        if (lastDStarPath != null && lastDStarPath.Length >= 2)
+        {
+            Gizmos.color = Color.cyan;
+            for (int i = 0; i < lastDStarPath.Length - 1; i++)
+                Gizmos.DrawLine(lastDStarPath[i], lastDStarPath[i + 1]);
+        }
+    }
+
+    public bool HasPath()
+    {
+        return currentPath != null && currentPath.Length > 0;
     }
 }
 
