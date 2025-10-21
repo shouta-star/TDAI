@@ -93,6 +93,8 @@ public class AgentController : MonoBehaviour
     //==============================================================
     public void SetPath(Vector3[] path)
     {
+        Debug.Log($"[SetPath:IN] {name} curPos={transform.position} newLen={path.Length}");
+
         if (path == null || path.Length == 0) return;
 
         // --- 現在位置に最も近いノードを探索し、そこから再開 ---
@@ -109,8 +111,13 @@ public class AgentController : MonoBehaviour
         }
 
         pathIndex = nearest;
+
+        Debug.Log($"[SetPath:NEAREST] {name} startIndex={nearest} first={path[0]} last={path[path.Length - 1]}");
+
         currentPath = path;
         Debug.Log($"[{name}] 経路再設定完了: {path.Length}ノード (startIndex={pathIndex})");
+
+        Debug.Log($"[SetPath:OUT] {name} pathIndex={pathIndex} len={currentPath?.Length}");
     }
 
     //==============================================================

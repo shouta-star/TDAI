@@ -7,7 +7,7 @@ public class SearchState : AgentBaseState
         LogAgentStatus(agent, "Searching Path");
 
         // Œo˜H‚ª–¢İ’è‚Ü‚½‚Í‹ó‚Ì‚Æ‚«‚Ì‚İÄŒvZ‚ğs‚¤
-        if (agent.currentPath == null || agent.currentPath.Length == 0)
+        if (agent.currentPath == null || agent.currentPath.Length <= 1)
         {
             agent.RecalculatePath();
         }

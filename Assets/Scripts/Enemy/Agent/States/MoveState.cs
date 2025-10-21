@@ -13,6 +13,8 @@ public class MoveState : AgentBaseState
 
     public override void Execute(AgentController agent)
     {
+        Debug.Log($"[Move:Exec-A] {agent.name} idx={agent.pathIndex} len={agent.currentPath.Length}");
+
         if (agent.currentPath == null || agent.currentPath.Length == 0)
         {
             agent.ChangeState(new SearchState());
@@ -21,6 +23,8 @@ public class MoveState : AgentBaseState
 
         if (agent.pathIndex >= agent.currentPath.Length)
         {
+            Debug.LogWarning($"[Move:EarlyGoal?] {agent.name} idx={agent.pathIndex} >= len={agent.currentPath.Length}");
+
             agent.ChangeState(new GoalState());
             return;
         }
@@ -46,12 +50,17 @@ public class MoveState : AgentBaseState
             agent.transform.position = target;
             agent.pathIndex++;
 
+            Debug.Log($"[Move:WaypointReached] {agent.name} nextIdx={agent.pathIndex}/{agent.currentPath.Length}");
+
             // 最終ノードに達していないなら次へ
             if (agent.pathIndex < agent.currentPath.Length)
                 return;
 
             // --- 経路終端 → ゴール距離判定 ---
             float goalDist = Vector3.Distance(agent.transform.position, agent.GetGoalPosition());
+
+            Debug.Log($"[Move:EndCheck] {agent.name} goalDist={goalDist:F3} self={agent.transform.position} goal={agent.GetGoalPosition()}");
+
             if (goalDist < 0.5f) // ← ゴール判定閾値を実距離に変更
             {
                 agent.ChangeState(new GoalState());

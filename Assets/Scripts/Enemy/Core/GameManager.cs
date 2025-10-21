@@ -162,6 +162,11 @@ public class GameManager : MonoBehaviour
 
             agent.SetPath(path);
             Debug.Log($"[GameManager] {agent.name} 経路設定完了 (pathCount={path.Length})");
+
+            // 経路を適用する直前 or 直後どちらでもOK（両方でも可）
+            Debug.Log($"[GM-Path] {agent.name} ai={data.aiType} start={agent.transform.position} goal={agent.GetGoalPosition()} " +
+                      $"len={(path == null ? -1 : path.Length)} first={(path != null && path.Length > 0 ? path[0].ToString() : "N/A")} " +
+                      $"last={(path != null && path.Length > 0 ? path[path.Length - 1].ToString() : "N/A")}");
         }
 
         Debug.Log($"[GameManager] {totalAgents}体のエージェントを初期化完了");
