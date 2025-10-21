@@ -24,6 +24,9 @@ public class AIManager : MonoBehaviour
     private Vector3[] lastDStarPath;
     private bool initialObstacleRegistered = false;
 
+    //[SerializeField] int sampleCount = 32;   // 例: 16/24/32 など
+    //[SerializeField] float stepLength = 1f;  // 一歩の距離（gridSizeでもOK）
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -262,6 +265,23 @@ public class AIManager : MonoBehaviour
                 yield return pos + new Vector3(dx * gridSize, 0, dz * gridSize);
             }
     }
+    //private IEnumerable<Vector3> ExpandNeighbors(Vector3 pos)
+    //{
+    //    float step = (360f / sampleCount) * Mathf.Deg2Rad;
+
+    //    for (int i = 0; i < sampleCount; i++)
+    //    {
+    //        float rad = step * i;
+    //        float nx = pos.x + Mathf.Cos(rad) * stepLength;
+    //        float nz = pos.z + Mathf.Sin(rad) * stepLength;
+    //        var neighbor = new Vector3(nx, pos.y, nz);
+
+    //        // 既存の通行判定があるならここでフィルタ
+    //        // if (!IsWalkable(neighbor)) continue;
+
+    //        yield return neighbor;
+    //    }
+    //}
 
     private float Heuristic(Vector3 a, Vector3 b) => Vector3.Distance(a, b);
 
