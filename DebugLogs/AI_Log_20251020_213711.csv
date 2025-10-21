@@ -1,0 +1,3 @@
+Frame,Time,Object,Type,State,Action,Target,TargetX,TargetY,TargetZ,CurrentX,CurrentY,CurrentZ,NextX,NextY,NextZ,AIType
+64,15.51,AgentPrefab,Agent,IdleState,Idling,Goal,20.00,0.00,20.00,0.00,0.00,0.00,0.00,0.00,0.00,DStar
+64,15.51,AgentPrefab,Agent,SearchState,Searching Path,Goal,20.00,0.00,20.00,0.00,0.00,0.00,0.00,0.00,0.00,DStar

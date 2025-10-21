@@ -1,1100 +1,984 @@
-using System.Collections.Generic;
-using System.Collections;
+ï»¿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class AIManager : MonoBehaviour
 {
-    [SerializeField] private float stepSize = 1.0f;
-    [SerializeField] private int maxNodes = 1000;
-    [SerializeField] private float reachThreshold = 1f;
-    [SerializeField, Range(8, 180)] private int directionResolution;
-
-    [Header("Path Request Settings")]
-    [SerializeField] private float processInterval = 0.02f; // Œo˜Hˆ—ŠÔŠu(•b)
-
     public static AIManager Instance { get; private set; }
 
-    private float lastProcessTime = 0f;
-    private readonly Queue<AgentController> pathRequestQueue = new Queue<AgentController>();
-
-    private class Obstacle
+    [System.Serializable]
+    public class Obstacle
     {
         public Vector3 pos;
         public float radius;
     }
-    private readonly List<Obstacle> obstacles = new List<Obstacle>();
 
-    private void Awake() => Instance = this;
+    [SerializeField] private float gridSize = 1f;
+    [SerializeField] private float reachThreshold = 0.5f;
+    [SerializeField] private bool showGizmos = true;
 
-    private void Update()
+    private List<Obstacle> obstacles = new List<Obstacle>();
+    private List<Node> dstarNodes = new List<Node>();
+    private Vector3[] lastAStarPath;
+    private Vector3[] lastDStarPath;
+    private bool initialObstacleRegistered = false;
+
+    private void Awake()
     {
-        // Œo˜HƒŠƒNƒGƒXƒg‚ğ‡‚Éˆ—
-        if (pathRequestQueue.Count > 0 && Time.time - lastProcessTime >= processInterval)
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
+
+    //============================================================
+    // ãƒãƒ¼ãƒ‰å®šç¾©
+    //============================================================
+    private class Node
+    {
+        public Vector3 pos;
+        public float g;
+        public float f;
+        public Node parent;
+    }
+
+    //============================================================
+    // çµŒè·¯æ¢ç´¢ã®é¸æŠ
+    //============================================================
+    public Vector3[] GetPath(Vector3 startWorld, Vector3 goalWorld, AIType type)
+    {
+        switch (type)
         {
-            var agent = pathRequestQueue.Dequeue();
-            ProcessPath(agent);
-            lastProcessTime = Time.time;
+            case AIType.AStar: return GetPathAStar(startWorld, goalWorld);
+            case AIType.DStar: return GetPathDStar(startWorld, goalWorld);
+            case AIType.NavMesh: return GetPathNavMesh(startWorld, goalWorld);
+            default: return new Vector3[0];
         }
     }
 
-    // ===========================================================
-    // Œo˜HƒŠƒNƒGƒXƒg‚Ìó•t
-    // ===========================================================
-    public void EnqueuePathRequest(AgentController agent)
+    //============================================================
+    // A*
+    //============================================================
+    private Vector3[] GetPathAStar(Vector3 startWorld, Vector3 goalWorld)
     {
-        if (agent == null) return;
-        if (!pathRequestQueue.Contains(agent))
-            pathRequestQueue.Enqueue(agent);
-    }
+        Debug.Log("[A*] æ–°è¦çµŒè·¯æ¢ç´¢ã‚’å®Ÿè¡Œ");
+        var open = new List<Node>();
+        var closed = new HashSet<Vector3>();
+        var nodes = new Dictionary<Vector3, Node>();
 
-    private void ProcessPath(AgentController agent)
-    {
-        Vector3 start = agent.transform.position;
-        Vector3 goal = agent.GetGoalPosition();
+        Node start = new Node { pos = startWorld, g = 0, f = Heuristic(startWorld, goalWorld) };
+        nodes[startWorld] = start;
+        open.Add(start);
 
-        var data = agent.GetData();
-        var path = GetPath(start, goal, data.aiType);
-        if (path != null && path.Length > 0)
+        int loopCount = 0;
+        const int MAX_LOOP = 5000;
+
+        while (open.Count > 0)
         {
-            agent.SetPath(path);
+            if (++loopCount > MAX_LOOP)
+            {
+                Debug.LogError("[A*] Infinite loop detected!");
+                break;
+            }
+
+            Node current = open.OrderBy(n => n.f).First();
+            open.Remove(current);
+            closed.Add(current.pos);
+
+            if (Vector3.Distance(current.pos, goalWorld) <= reachThreshold)
+            {
+                lastAStarPath = ReconstructPath(current, goalWorld);
+                return lastAStarPath;
+            }
+
+            foreach (var nextPos in ExpandNeighbors(current.pos))
+            {
+                if (closed.Contains(nextPos)) continue;
+                if (IsObstacleBetween(current.pos, nextPos)) continue;
+
+                float tentativeG = current.g + Vector3.Distance(current.pos, nextPos);
+                if (!nodes.TryGetValue(nextPos, out Node next))
+                {
+                    next = new Node { pos = nextPos, g = Mathf.Infinity };
+                    nodes[nextPos] = next;
+                }
+
+                if (tentativeG < next.g)
+                {
+                    next.parent = current;
+                    next.g = tentativeG;
+                    next.f = tentativeG + Heuristic(next.pos, goalWorld);
+                    if (!open.Contains(next)) open.Add(next);
+                }
+            }
         }
+
+        return new Vector3[0];
     }
 
-    // ===========================================================
-    // “®“IáŠQ•¨ŠÇ—
-    // ===========================================================
-    //public void OnDynamicObstacleChanged(Vector3 position, float radius, bool isBlocked)
-    //{
-    //    position.y = 0f;
+    //============================================================
+    // D*
+    //============================================================
+    private Vector3[] GetPathDStar(Vector3 startWorld, Vector3 goalWorld)
+    {
+        Debug.Log("[D*] æ–°è¦çµŒè·¯æ¢ç´¢ã‚’å®Ÿè¡Œ");
 
-    //    if (isBlocked)
-    //        obstacles.Add(new Obstacle { pos = position, radius = radius });
-    //    else
-    //        obstacles.RemoveAll(o => Vector3.Distance(o.pos, position) < 0.01f);
+        var open = new List<Node>();
+        var closed = new HashSet<Vector3>();
+        var nodes = new Dictionary<Vector3, Node>();
 
-    //    foreach (var agent in FindObjectsOfType<AgentController>())
-    //    {
-    //        var data = agent.GetData();
-    //        if (data != null && data.aiType == AIType.DStar)
-    //            agent.OnDynamicMapChanged(position, isBlocked);
-    //    }
-    //}
+        Node start = new Node { pos = startWorld, g = 0, f = Heuristic(startWorld, goalWorld) };
+        nodes[startWorld] = start;
+        open.Add(start);
+
+        int loopCount = 0;
+        const int MAX_LOOP = 5000;
+
+        while (open.Count > 0)
+        {
+            if (++loopCount > MAX_LOOP)
+            {
+                Debug.LogError("[D*] Infinite loop detected!");
+                break;
+            }
+
+            Node current = open.OrderBy(n => n.f).First();
+            open.Remove(current);
+            closed.Add(current.pos);
+
+            if (Vector3.Distance(current.pos, goalWorld) <= reachThreshold)
+            {
+                lastDStarPath = ReconstructPath(current, goalWorld);
+                dstarNodes = ConvertPathToNodes(lastDStarPath);
+                Debug.Log("[D*] æ¢ç´¢å®Œäº†");
+                return lastDStarPath;
+            }
+
+            foreach (var nextPos in ExpandNeighbors(current.pos))
+            {
+                if (closed.Contains(nextPos)) continue;
+                if (IsObstacleBetween(current.pos, nextPos)) continue;
+
+                float cost = Vector3.Distance(current.pos, nextPos);
+                float tentativeG = current.g + cost;
+
+                if (!nodes.TryGetValue(nextPos, out Node next))
+                {
+                    next = new Node { pos = nextPos, g = Mathf.Infinity };
+                    nodes[nextPos] = next;
+                }
+
+                if (tentativeG < next.g)
+                {
+                    next.parent = current;
+                    next.g = tentativeG;
+                    next.f = tentativeG + Heuristic(next.pos, goalWorld);
+                    if (!open.Contains(next)) open.Add(next);
+                }
+            }
+        }
+
+        return new Vector3[0];
+    }
+
+    //============================================================
+    // NavMesh
+    //============================================================
+    private Vector3[] GetPathNavMesh(Vector3 startWorld, Vector3 goalWorld)
+    {
+        NavMeshPath path = new NavMeshPath();
+        if (NavMesh.CalculatePath(startWorld, goalWorld, NavMesh.AllAreas, path))
+            return path.corners;
+        return new Vector3[0];
+    }
+
+    //============================================================
+    // å‹•çš„éšœå®³ç‰©é€šçŸ¥ï¼ˆä¿®æ­£ç‰ˆï¼‰
+    //============================================================
     public void OnDynamicObstacleChanged(Vector3 position, float radius, bool isBlocked)
     {
         position.y = 0f;
 
+        // é‡è¤‡ç™»éŒ²é˜²æ­¢
         if (isBlocked)
+        {
+            if (obstacles.Any(o => Vector3.Distance(o.pos, position) < 0.1f))
+                return;
             obstacles.Add(new Obstacle { pos = position, radius = radius });
+        }
         else
-            obstacles.RemoveAll(o => Vector3.Distance(o.pos, position) < 0.01f);
+        {
+            obstacles.RemoveAll(o => Vector3.Distance(o.pos, position) < 0.1f);
+        }
 
-        // --- D* ‚Í‘¦Ä’Tõ–½—ß ---
+        Debug.Log($"[AIManager] å‹•çš„éšœå®³ç‰©æ›´æ–°: pos={position}, radius={radius:F2}, blocked={isBlocked}");
+
         foreach (var agent in FindObjectsOfType<AgentController>())
         {
             var data = agent.GetData();
-            if (data == null) continue;
+            if (data == null || data.aiType != AIType.DStar) continue;
 
-            if (data.aiType == AIType.DStar)
-            {
-                Debug.Log($"[AIManager] D* Agent {agent.name} ‚É“®“IáŠQ•¨‚Ì’Ê’m ¨ Ä’Tõ");
-                agent.RecalculatePath();
-            }
+            // â˜…ç¯„å›²æ‹¡å¤§ã§æš´èµ°é˜²æ­¢
+            if (Vector3.Distance(agent.transform.position, position) > radius * 5f)
+                continue;
+
+            Vector3 start = agent.transform.position;
+            Vector3 goal = agent.GetGoalPosition();
+
+            var newPath = GetPathDStar(start, goal);
+            if (newPath == null || newPath.Length <= 1) continue;
+
+            agent.SetPath(newPath);
         }
     }
 
-
+    //============================================================
+    // å…±é€šé–¢æ•°
+    //============================================================
     private bool IsObstacleBetween(Vector3 a, Vector3 b)
     {
-        foreach (var obs in obstacles)
+        foreach (var o in obstacles)
         {
-            Vector3 closest = ClosestPointOnSegment(obs.pos, a, b);
-            if (Vector3.Distance(obs.pos, closest) <= obs.radius)
+            Vector3 closest = ClosestPointOnSegment(o.pos, a, b);
+            float distance = Vector3.Distance(o.pos, closest);
+            if (distance <= o.radius)
                 return true;
         }
         return false;
     }
 
-    private Vector3 ClosestPointOnSegment(Vector3 p, Vector3 a, Vector3 b)
+    private Vector3 ClosestPointOnSegment(Vector3 point, Vector3 a, Vector3 b)
     {
         Vector3 ab = b - a;
-        float t = Vector3.Dot(p - a, ab) / ab.sqrMagnitude;
-        t = Mathf.Clamp01(t);
+        float t = Mathf.Clamp01(Vector3.Dot(point - a, ab) / ab.sqrMagnitude);
         return a + ab * t;
     }
 
-    // ===========================================================
-    // Œo˜H’Tõ–{‘ÌiA* / D*j
-    // ===========================================================
-    public Vector3[] GetPath(Vector3 startWorld, Vector3 goalWorld, AIType type)
+    private IEnumerable<Vector3> ExpandNeighbors(Vector3 pos)
     {
-        switch (type)
-        {
-            case AIType.DStar:
-                return GetPathDStar(startWorld, goalWorld);
-            case AIType.NavMesh:
-                return GetPathNavMesh(startWorld, goalWorld);
-            case AIType.AStar:
-            default:
-                return GetPathAStar(startWorld, goalWorld);
-        }
-    }
-
-    private Vector3[] GetPathAStar(Vector3 startWorld, Vector3 goalWorld)
-    {
-        startWorld.y = goalWorld.y = 0f;
-
-        //// š •Çƒ`ƒFƒbƒN‚ğæ‚És‚¤
-        //if (IsObstacleBetween(startWorld, goalWorld))
-        //{
-        //    // ’¼üã‚ÉáŠQ•¨‚ª‚ ‚éê‡‚Í‘¦ƒŠƒ^[ƒ“‚¹‚¸’Êí’Tõ‚Éi‚Ş
-        //}
-        //else if (Vector3.Distance(startWorld, goalWorld) <= reachThreshold)
-        //{
-        //    return new[] { goalWorld };
-        //}
-
-        if (Vector3.Distance(startWorld, goalWorld) <= reachThreshold)
-            return new[] { goalWorld };
-
-        var open = new List<Node>();
-        var closed = new HashSet<Vector3>();
-
-        var start = new Node
-        {
-            pos = startWorld,
-            parent = null,
-            g = 0f,
-            f = Heuristic(startWorld, goalWorld)
-        };
-        open.Add(start);
-
-        int iterations = 0;
-        while (open.Count > 0 && iterations++ < maxNodes)
-        {
-            Node current = GetLowestF(open);
-            open.Remove(current);
-            closed.Add(current.pos);
-
-            if (Vector3.Distance(current.pos, goalWorld) <= reachThreshold)
-                return ReconstructPath(current, goalWorld);
-
-            foreach (var next in Expand360(current, goalWorld))
+        for (int dx = -1; dx <= 1; dx++)
+            for (int dz = -1; dz <= 1; dz++)
             {
-                if (closed.Contains(next.pos)) continue;
-                if (IsObstacleBetween(current.pos, next.pos)) continue;
-
-                Node same = open.Find(n => Approximately(n.pos, next.pos));
-                if (same != null)
-                {
-                    if (next.g < same.g)
-                    {
-                        same.g = next.g;
-                        same.f = next.f;
-                        same.parent = current;
-                    }
-                }
-                else
-                {
-                    open.Add(next);
-                }
+                if (dx == 0 && dz == 0) continue;
+                yield return pos + new Vector3(dx * gridSize, 0, dz * gridSize);
             }
-        }
-        return new[] { goalWorld };
-    }
-
-    private Vector3[] GetPathDStar(Vector3 startWorld, Vector3 goalWorld)
-    {
-        var path = GetPathAStar(startWorld, goalWorld);
-        if (path == null || path.Length == 0) return path;
-
-        for (int i = 0; i < path.Length - 1; i++)
-        {
-            if (IsObstacleBetween(path[i], path[i + 1]))
-                return GetPathAStar(path[i], goalWorld);
-        }
-        return path;
-    }
-
-    private Vector3[] GetPathNavMesh(Vector3 startWorld, Vector3 goalWorld)
-    {
-        NavMeshPath navPath = new NavMeshPath();
-
-        // NavMeshAgent‚ª‚¢‚È‚­‚Ä‚àŒo˜H‚¾‚¯Zo‚Å‚«‚é
-        if (!NavMesh.CalculatePath(startWorld, goalWorld, NavMesh.AllAreas, navPath))
-        {
-            Debug.LogWarning("[NavMesh] Œo˜HŒvZ‚É¸”s‚µ‚Ü‚µ‚½B");
-            return new[] { goalWorld };
-        }
-
-        if (navPath.corners == null || navPath.corners.Length == 0)
-        {
-            Debug.LogWarning("[NavMesh] Œo˜HƒR[ƒi[‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñB");
-            return new[] { goalWorld };
-        }
-
-        Debug.Log($"[NavMesh] Œo˜H¶¬: {navPath.corners.Length} “_");
-        return navPath.corners;
-    }
-
-
-    private class Node
-    {
-        public Vector3 pos;
-        public Node parent;
-        public float g;
-        public float f;
     }
 
     private float Heuristic(Vector3 a, Vector3 b) => Vector3.Distance(a, b);
-    private Node GetLowestF(List<Node> list)
-    {
-        Node best = list[0];
-        for (int i = 1; i < list.Count; i++)
-            if (list[i].f < best.f)
-                best = list[i];
-        return best;
-    }
 
-    private IEnumerable<Node> Expand360(Node current, Vector3 goal)
+    private Vector3[] ReconstructPath(Node endNode, Vector3 goal)
     {
-        float step = 360f / directionResolution;
-        for (int i = 0; i < directionResolution; i++)
+        var path = new List<Vector3>();
+        var current = endNode;
+        HashSet<Node> visited = new HashSet<Node>();
+
+        while (current != null)
         {
-            float angle = i * step;
-            Vector3 dir = new Vector3(Mathf.Cos(angle * Mathf.Deg2Rad), 0, Mathf.Sin(angle * Mathf.Deg2Rad));
-            Vector3 np = current.pos + dir * stepSize;
-
-            float g = current.g + stepSize;
-            float f = g + Heuristic(np, goal);
-
-            yield return new Node { pos = np, parent = current, g = g, f = f };
+            if (!visited.Add(current)) break;
+            path.Insert(0, current.pos);
+            current = current.parent;
         }
-    }
 
-    private Vector3[] ReconstructPath(Node goalNode, Vector3 goalWorld)
-    {
-        var path = new List<Vector3> { goalWorld };
-        Node n = goalNode;
-        while (n != null)
-        {
-            path.Add(n.pos);
-            n = n.parent;
-        }
-        path.Reverse();
+        path.Add(goal);
         return path.ToArray();
     }
 
-    private bool Approximately(Vector3 a, Vector3 b) => (a - b).sqrMagnitude <= 1e-4f;
+    private List<Node> ConvertPathToNodes(Vector3[] path)
+    {
+        return path.Select(p => new Node { pos = p }).ToList();
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!showGizmos) return;
+
+        Gizmos.color = Color.cyan;
+        if (lastDStarPath != null && lastDStarPath.Length > 1)
+            for (int i = 0; i < lastDStarPath.Length - 1; i++)
+                Gizmos.DrawLine(lastDStarPath[i], lastDStarPath[i + 1]);
+    }
+
     public bool HasObstacleBetween(Vector3 a, Vector3 b) => IsObstacleBetween(a, b);
 }
 
 
 //using System.Collections.Generic;
+//using System.Linq;
 //using UnityEngine;
+//using UnityEngine.AI;
 
 //public class AIManager : MonoBehaviour
 //{
-//    [SerializeField] private float stepSize = 1.0f;
-//    [SerializeField] private int maxNodes = 1000;
-//    [SerializeField] private float reachThreshold = 1f;
-//    [SerializeField, Range(8, 180)] private int directionResolution = 72;
-
 //    public static AIManager Instance { get; private set; }
 
-//    // áŠQ•¨‚ğˆÊ’u{”¼Œa‚ÅŠÇ—
-//    private class Obstacle
+//    [System.Serializable]
+//    public class Obstacle
 //    {
 //        public Vector3 pos;
 //        public float radius;
 //    }
-//    private readonly List<Obstacle> obstacles = new List<Obstacle>();
 
-//    private void Awake() => Instance = this;
+//    [SerializeField] private float gridSize = 1f;
+//    [SerializeField] private float reachThreshold = 0.5f;
+//    [SerializeField] private bool showGizmos = true;
 
-//    // ===========================================================
-//    //  “®“IáŠQ•¨“o˜^iMovingWall‚©‚ç’Ê’mj
-//    // ===========================================================
+//    private List<Obstacle> obstacles = new List<Obstacle>();
+//    private List<Node> dstarNodes = new List<Node>();
+//    private Vector3[] lastAStarPath;
+//    private Vector3[] lastDStarPath;
+
+//    private bool initialObstacleRegistered = false;
+
+//    private void Awake()
+//    {
+//        if (Instance == null) Instance = this;
+//        else Destroy(gameObject);
+//    }
+
+//    //============================================================
+//    // ãƒãƒ¼ãƒ‰å®šç¾©
+//    //============================================================
+//    private class Node
+//    {
+//        public Vector3 pos;
+//        public float g;
+//        public float f;
+//        public Node parent;
+//    }
+
+//    //============================================================
+//    // çµŒè·¯æ¢ç´¢ãƒ«ãƒ¼ãƒˆé¸æŠ
+//    //============================================================
+//    public Vector3[] GetPath(Vector3 startWorld, Vector3 goalWorld, AIType type)
+//    {
+//        switch (type)
+//        {
+//            case AIType.AStar:
+//                return GetPathAStar(startWorld, goalWorld);
+//            case AIType.DStar:
+//                return GetPathDStar(startWorld, goalWorld);
+//            case AIType.NavMesh:
+//                return GetPathNavMesh(startWorld, goalWorld);
+//            default:
+//                return new Vector3[0];
+//        }
+//    }
+
+//    //============================================================
+//    // A* ã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ ï¼ˆé™çš„ï¼‰
+//    //============================================================
+//    private Vector3[] GetPathAStar(Vector3 startWorld, Vector3 goalWorld)
+//    {
+//        Debug.Log("[A*] æ–°è¦çµŒè·¯æ¢ç´¢ã‚’å®Ÿè¡Œ");
+
+//        var open = new List<Node>();
+//        var closed = new HashSet<Vector3>();
+//        var nodes = new Dictionary<Vector3, Node>();
+
+//        Node start = new Node { pos = startWorld, g = 0, f = Heuristic(startWorld, goalWorld) };
+//        nodes[startWorld] = start;
+//        open.Add(start);
+
+//        while (open.Count > 0)
+//        {
+//            Node current = open.OrderBy(n => n.f).First();
+//            open.Remove(current);
+//            closed.Add(current.pos);
+
+//            if (Vector3.Distance(current.pos, goalWorld) <= reachThreshold)
+//            {
+//                lastAStarPath = ReconstructPath(current, goalWorld);
+//                return lastAStarPath;
+//            }
+
+//            foreach (var nextPos in ExpandNeighbors(current.pos))
+//            {
+//                if (closed.Contains(nextPos)) continue;
+//                if (IsObstacleBetween(current.pos, nextPos)) continue;
+
+//                float tentativeG = current.g + Vector3.Distance(current.pos, nextPos);
+//                if (!nodes.TryGetValue(nextPos, out Node next))
+//                {
+//                    next = new Node { pos = nextPos, g = Mathf.Infinity };
+//                    nodes[nextPos] = next;
+//                }
+
+//                if (tentativeG < next.g)
+//                {
+//                    next.parent = current;
+//                    next.g = tentativeG;
+//                    next.f = tentativeG + Heuristic(next.pos, goalWorld);
+//                    if (!open.Contains(next))
+//                        open.Add(next);
+//                }
+//            }
+//        }
+
+//        Debug.LogWarning("[A*] çµŒè·¯ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã§ã—ãŸã€‚");
+//        return new Vector3[0];
+//    }
+
+//    //============================================================
+//    // D* ã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ ï¼ˆå‹•çš„å†æ¢ç´¢ï¼‰
+//    //============================================================
+//    private Vector3[] GetPathDStar(Vector3 startWorld, Vector3 goalWorld)
+//    {
+//        Debug.Log("[D*] æ–°è¦çµŒè·¯æ¢ç´¢ã‚’å®Ÿè¡Œ");
+
+//        var open = new List<Node>();
+//        var closed = new HashSet<Vector3>();
+//        var nodes = new Dictionary<Vector3, Node>();
+
+//        Node start = new Node { pos = startWorld, g = 0, f = Heuristic(startWorld, goalWorld) };
+//        nodes[startWorld] = start;
+//        open.Add(start);
+
+//        while (open.Count > 0)
+//        {
+//            Node current = open.OrderBy(n => n.f).First();
+//            open.Remove(current);
+//            closed.Add(current.pos);
+
+//            if (Vector3.Distance(current.pos, goalWorld) <= reachThreshold)
+//            {
+//                lastDStarPath = ReconstructPath(current, goalWorld);
+//                dstarNodes = ConvertPathToNodes(lastDStarPath);
+//                Debug.Log("[D*] åˆå›æ¢ç´¢å®Œäº†ï¼ˆç‹¬ç«‹D*ï¼‰");
+//                return lastDStarPath;
+//            }
+
+//            foreach (var nextPos in ExpandNeighbors(current.pos))
+//            {
+//                if (closed.Contains(nextPos)) continue;
+//                if (IsObstacleBetween(current.pos, nextPos)) continue;
+
+//                float cost = Vector3.Distance(current.pos, nextPos);
+//                float tentativeG = current.g + cost;
+
+//                if (!nodes.TryGetValue(nextPos, out Node next))
+//                {
+//                    next = new Node { pos = nextPos, g = Mathf.Infinity };
+//                    nodes[nextPos] = next;
+//                }
+
+//                if (tentativeG < next.g)
+//                {
+//                    next.parent = current;
+//                    next.g = tentativeG;
+//                    next.f = tentativeG + Heuristic(next.pos, goalWorld);
+//                    if (!open.Contains(next))
+//                        open.Add(next);
+//                }
+//            }
+//        }
+
+//        Debug.LogWarning("[D*] çµŒè·¯ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã§ã—ãŸã€‚");
+//        return new Vector3[0];
+//    }
+
+//    //============================================================
+//    // NavMesh çµŒè·¯ï¼ˆå‚è€ƒï¼‰
+//    //============================================================
+//    private Vector3[] GetPathNavMesh(Vector3 startWorld, Vector3 goalWorld)
+//    {
+//        NavMeshPath path = new NavMeshPath();
+//        if (NavMesh.CalculatePath(startWorld, goalWorld, NavMesh.AllAreas, path))
+//            return path.corners;
+//        return new Vector3[0];
+//    }
+
+//    //============================================================
+//    // å‹•çš„éšœå®³ç‰©ã®ç™»éŒ²ï¼å‰Šé™¤ï¼ˆâ˜…ä¿®æ­£ç‰ˆï¼‰
+//    //============================================================
 //    public void OnDynamicObstacleChanged(Vector3 position, float radius, bool isBlocked)
 //    {
 //        position.y = 0f;
 
+//        // --- åŒåº§æ¨™ã®é‡è¤‡ç™»éŒ²ã‚’é˜²ã ---
 //        if (isBlocked)
 //        {
+//            if (obstacles.Any(o => Vector3.Distance(o.pos, position) < 0.1f))
+//                return; // ã™ã§ã«ç™»éŒ²æ¸ˆã¿ãªã‚‰ç„¡è¦–
+
 //            obstacles.Add(new Obstacle { pos = position, radius = radius });
-//            Debug.Log($"[AIManager] •Ç’Ç‰Á at {position}");
 //        }
 //        else
 //        {
-//            obstacles.RemoveAll(o => Vector3.Distance(o.pos, position) < 0.01f);
-//            Debug.Log($"[AIManager] •Ç‰ğœ at {position}");
+//            obstacles.RemoveAll(o => Vector3.Distance(o.pos, position) < 0.1f);
 //        }
 
-//        // D*‚Ì‚İ‘¦Ä’Tõ
+//        if (!initialObstacleRegistered)
+//            initialObstacleRegistered = true;
+
+//        Debug.Log($"[AIManager] å‹•çš„éšœå®³ç‰©æ›´æ–°: pos={position}, radius={radius:F2}, blocked={isBlocked}");
+
+//        // --- D*ã‚¨ãƒ¼ã‚¸ã‚§ãƒ³ãƒˆã¯å³æ™‚å†æ¢ç´¢ï¼ˆç¯„å›²é™å®šï¼‰ ---
 //        foreach (var agent in FindObjectsOfType<AgentController>())
 //        {
 //            var data = agent.GetData();
-//            if (data != null && data.aiType == AIType.DStar)
-//                agent.OnDynamicMapChanged(position, isBlocked);
+//            if (data == null) continue;
+//            if (data.aiType != AIType.DStar) continue;
+
+//            // â˜…è¿‘è·é›¢ã®ã¿å†æ¢ç´¢ï¼ˆCPUæš´èµ°é˜²æ­¢ï¼‰
+//            if (Vector3.Distance(agent.transform.position, position) > radius * 3f)
+//                continue;
+
+//            Vector3 start = agent.transform.position;
+//            Vector3 goal = agent.GetGoalPosition();
+
+//            Debug.Log($"[D*] {agent.name} å†æ¢ç´¢é–‹å§‹: start={start}, goal={goal}");
+
+//            var newPath = GetPathDStar(start, goal);
+
+//            if (newPath == null || newPath.Length <= 1)
+//            {
+//                Debug.LogWarning($"[D*] {agent.name} ã®å†æ¢ç´¢çµæœãŒç„¡åŠ¹ (len={newPath?.Length ?? 0}) â†’ çµŒè·¯ä¸Šæ›¸ãã›ãšä¿æŒ");
+//                continue;
+//            }
+
+//            Debug.Log($"[D*] {agent.name} ã«æ–°çµŒè·¯ã‚’é©ç”¨: {newPath.Length} ãƒãƒ¼ãƒ‰");
+//            agent.SetPath(newPath);
 //        }
 //    }
 
-//    // ===========================================================
-//    //  Œo˜H’Tõ’†‚ÌáŠQ•¨ƒ`ƒFƒbƒNiCollider”ñˆË‘¶j
-//    // ===========================================================
+//    public bool IsObstacleDataReady() => initialObstacleRegistered;
+
+//    //============================================================
+//    // å…±é€šè£œåŠ©é–¢æ•°ç¾¤
+//    //============================================================
 //    private bool IsObstacleBetween(Vector3 a, Vector3 b)
 //    {
-//        foreach (var obs in obstacles)
+//        foreach (var o in obstacles)
 //        {
-//            Vector3 closest = ClosestPointOnSegment(obs.pos, a, b);
-//            if (Vector3.Distance(obs.pos, closest) <= obs.radius)
+//            Vector3 closest = ClosestPointOnSegment(o.pos, a, b);
+//            float distance = Vector3.Distance(o.pos, closest);
+//            if (distance <= o.radius)
 //                return true;
 //        }
 //        return false;
 //    }
 
-//    private Vector3 ClosestPointOnSegment(Vector3 p, Vector3 a, Vector3 b)
+//    private Vector3 ClosestPointOnSegment(Vector3 point, Vector3 a, Vector3 b)
 //    {
 //        Vector3 ab = b - a;
-//        float t = Vector3.Dot(p - a, ab) / ab.sqrMagnitude;
+//        float t = Vector3.Dot(point - a, ab) / ab.sqrMagnitude;
 //        t = Mathf.Clamp01(t);
 //        return a + ab * t;
 //    }
 
-//    // ===========================================================
-//    //  A* / D* Œo˜H’Tõ‚ÌØ‚è‘Ö‚¦
-//    // ===========================================================
-//    public Vector3[] GetPath(Vector3 startWorld, Vector3 goalWorld, AIType type)
+//    private IEnumerable<Vector3> ExpandNeighbors(Vector3 pos)
 //    {
-//        switch (type)
-//        {
-//            case AIType.DStar:
-//                return GetPathDStar(startWorld, goalWorld);
-//            case AIType.AStar:
-//            default:
-//                return GetPathAStar(startWorld, goalWorld);
-//        }
-//    }
-
-//    // ===========================================================
-//    //  A*ƒAƒ‹ƒSƒŠƒYƒ€
-//    // ===========================================================
-//    private Vector3[] GetPathAStar(Vector3 startWorld, Vector3 goalWorld)
-//    {
-//        startWorld.y = goalWorld.y = 0f;
-
-//        if (Vector3.Distance(startWorld, goalWorld) <= reachThreshold)
-//            return new[] { goalWorld };
-
-//        var open = new List<Node>();
-//        var closed = new HashSet<Vector3>();
-
-//        var start = new Node
-//        {
-//            pos = startWorld,
-//            parent = null,
-//            g = 0f,
-//            f = Heuristic(startWorld, goalWorld)
-//        };
-//        open.Add(start);
-
-//        int iterations = 0;
-
-//        while (open.Count > 0 && iterations++ < maxNodes)
-//        {
-//            Node current = GetLowestF(open);
-//            open.Remove(current);
-//            closed.Add(current.pos);
-
-//            if (Vector3.Distance(current.pos, goalWorld) <= reachThreshold)
-//                return ReconstructPath(current, goalWorld);
-
-//            foreach (var next in Expand360(current, goalWorld))
+//        for (int dx = -1; dx <= 1; dx++)
+//            for (int dz = -1; dz <= 1; dz++)
 //            {
-//                if (closed.Contains(next.pos)) continue;
-
-//                if (IsObstacleBetween(current.pos, next.pos))
-//                    continue;
-
-//                Node same = open.Find(n => Approximately(n.pos, next.pos));
-//                if (same != null)
-//                {
-//                    if (next.g < same.g)
-//                    {
-//                        same.g = next.g;
-//                        same.f = next.f;
-//                        same.parent = current;
-//                    }
-//                }
-//                else
-//                {
-//                    open.Add(next);
-//                }
+//                if (dx == 0 && dz == 0) continue;
+//                yield return pos + new Vector3(dx * gridSize, 0, dz * gridSize);
 //            }
-//        }
-
-//        Debug.LogWarning("[A*] Œo˜H‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ‚Å‚µ‚½B");
-//        return new[] { goalWorld };
 //    }
 
-//    // ===========================================================
-//    //  D*ƒAƒ‹ƒSƒŠƒYƒ€iŠÈˆÕÄ’Tõ”Åj
-//    // ===========================================================
-//    private Vector3[] GetPathDStar(Vector3 startWorld, Vector3 goalWorld)
-//    {
-//        var path = GetPathAStar(startWorld, goalWorld);
-//        if (path == null || path.Length == 0) return path;
-
-//        for (int i = 0; i < path.Length - 1; i++)
-//        {
-//            if (IsObstacleBetween(path[i], path[i + 1]))
-//            {
-//                Debug.Log("[D*] “®“IáŠQ•¨‚ğŒŸ’m ¨ Ä’Tõ");
-//                return GetPathAStar(path[i], goalWorld);
-//            }
-//        }
-//        return path;
-//    }
-
-//    // ===========================================================
-//    //  Œo˜H’Tõ—pƒm[ƒh\‘¢‘Ì
-//    // ===========================================================
-//    private class Node
-//    {
-//        public Vector3 pos;
-//        public Node parent;
-//        public float g;
-//        public float f;
-//    }
-
-//    // ===========================================================
-//    //  ‹¤’Êƒ†[ƒeƒBƒŠƒeƒB
-//    // ===========================================================
 //    private float Heuristic(Vector3 a, Vector3 b) => Vector3.Distance(a, b);
 
-//    private Node GetLowestF(List<Node> list)
+//    private Vector3[] ReconstructPath(Node endNode, Vector3 goal)
 //    {
-//        Node best = list[0];
-//        for (int i = 1; i < list.Count; i++)
-//            if (list[i].f < best.f)
-//                best = list[i];
-//        return best;
-//    }
-
-//    private IEnumerable<Node> Expand360(Node current, Vector3 goal)
-//    {
-//        float step = 360f / directionResolution;
-//        for (int i = 0; i < directionResolution; i++)
+//        var path = new List<Vector3>();
+//        var current = endNode;
+//        while (current != null)
 //        {
-//            float angle = i * step;
-//            Vector3 dir = new Vector3(Mathf.Cos(angle * Mathf.Deg2Rad), 0, Mathf.Sin(angle * Mathf.Deg2Rad));
-//            Vector3 np = current.pos + dir * stepSize;
-
-//            float g = current.g + stepSize;
-//            float f = g + Heuristic(np, goal);
-
-//            yield return new Node
-//            {
-//                pos = np,
-//                parent = current,
-//                g = g,
-//                f = f
-//            };
+//            path.Insert(0, current.pos);
+//            current = current.parent;
 //        }
-//    }
-
-//    private Vector3[] ReconstructPath(Node goalNode, Vector3 goalWorld)
-//    {
-//        var path = new List<Vector3> { goalWorld };
-//        Node n = goalNode;
-//        while (n != null)
-//        {
-//            path.Add(n.pos);
-//            n = n.parent;
-//        }
-//        path.Reverse();
+//        path.Add(goal);
 //        return path.ToArray();
 //    }
 
-//    private bool Approximately(Vector3 a, Vector3 b)
-//        => (a - b).sqrMagnitude <= 1e-4f;
-
-//    // ===========================================================
-//    //  ŠO•”ƒAƒNƒZƒX—pƒwƒ‹ƒp[iAgentController‚©‚çg—pj
-//    // ===========================================================
-//    public bool HasObstacleBetween(Vector3 a, Vector3 b)
+//    private List<Node> ConvertPathToNodes(Vector3[] path)
 //    {
-//        return IsObstacleBetween(a, b);
+//        return path.Select(p => new Node { pos = p }).ToList();
 //    }
+
+//    //============================================================
+//    // Gizmoæç”»
+//    //============================================================
+//    private void OnDrawGizmos()
+//    {
+//        if (!showGizmos) return;
+
+//        Gizmos.color = Color.yellow;
+//        if (lastAStarPath != null && lastAStarPath.Length > 1)
+//            for (int i = 0; i < lastAStarPath.Length - 1; i++)
+//                Gizmos.DrawLine(lastAStarPath[i], lastAStarPath[i + 1]);
+
+//        Gizmos.color = Color.cyan;
+//        if (lastDStarPath != null && lastDStarPath.Length > 1)
+//            for (int i = 0; i < lastDStarPath.Length - 1; i++)
+//                Gizmos.DrawLine(lastDStarPath[i], lastDStarPath[i + 1]);
+//    }
+
+//    // AgentController ã‹ã‚‰å‚ç…§ã•ã‚Œã‚‹å…¬é–‹ãƒ¡ã‚½ãƒƒãƒ‰
+//    public bool HasObstacleBetween(Vector3 a, Vector3 b) => IsObstacleBetween(a, b);
 //}
 
 
 ////using System.Collections.Generic;
+////using System.Linq;
 ////using UnityEngine;
+////using UnityEngine.AI;
 
 ////public class AIManager : MonoBehaviour
 ////{
-////    [SerializeField] private float stepSize = 1.0f;
-////    [SerializeField] private int maxNodes = 1000;
-////    [SerializeField] private float reachThreshold = 1f;
-////    [SerializeField, Range(8, 180)] private int directionResolution = 72;
-
 ////    public static AIManager Instance { get; private set; }
 
-////    // Collider‚ğg‚í‚È‚¢‘ã‚í‚è‚ÉáŠQ•¨ˆÊ’uƒŠƒXƒg‚ğ•Û
-////    private readonly HashSet<Vector3> obstaclePositions = new HashSet<Vector3>();
+////    [System.Serializable]
+////    public class Obstacle
+////    {
+////        public Vector3 pos;
+////        public float radius;
+////    }
+
+////    [SerializeField] private float gridSize = 1f;
+////    [SerializeField] private float reachThreshold = 0.5f;
+////    [SerializeField] private bool showGizmos = true;
+
+////    private List<Obstacle> obstacles = new List<Obstacle>();
+////    private List<Node> dstarNodes = new List<Node>();
+////    private Vector3[] lastAStarPath;
+////    private Vector3[] lastDStarPath;
+
+////    private bool initialObstacleRegistered = false;
 
 ////    private void Awake()
 ////    {
-////        Instance = this;
+////        if (Instance == null) Instance = this;
+////        else Destroy(gameObject);
 ////    }
 
-////    // ====== NodeƒNƒ‰ƒX ======
+////    //============================================================
+////    // ãƒãƒ¼ãƒ‰å®šç¾©
+////    //============================================================
 ////    private class Node
 ////    {
 ////        public Vector3 pos;
-////        public Node parent;
 ////        public float g;
 ////        public float f;
+////        public Node parent;
 ////    }
 
-////    // ===========================================================
-////    //  “®“IáŠQ•¨“o˜^iMovingWall‚©‚ç’Ê’m‚ğó‚¯æ‚éj
-////    // ===========================================================
-////    public void OnDynamicObstacleChanged(Vector3 position, bool isBlocked)
-////    {
-////        position.y = 0f; // “ˆê
-
-////        if (isBlocked)
-////        {
-////            obstaclePositions.Add(position);
-////            Debug.Log($"[AIManager] •Ç’Ç‰Á at {position}");
-////        }
-////        else
-////        {
-////            obstaclePositions.Remove(position);
-////            Debug.Log($"[AIManager] •Ç‰ğœ at {position}");
-////        }
-
-////        // D*‚Ì‚İ‘¦Ä’Tõ‚ğ”­“®
-////        foreach (var agent in FindObjectsOfType<AgentController>())
-////        {
-////            var data = agent.GetData();
-////            if (data != null && data.aiType == AIType.DStar)
-////            {
-////                agent.OnDynamicMapChanged(position, isBlocked);
-////            }
-////        }
-////    }
-
-////    // ===========================================================
-////    //  A* / D* Œo˜H’Tõ‚ÌØ‚è‘Ö‚¦
-////    // ===========================================================
+////    //============================================================
+////    // çµŒè·¯æ¢ç´¢ãƒ«ãƒ¼ãƒˆé¸æŠ
+////    //============================================================
 ////    public Vector3[] GetPath(Vector3 startWorld, Vector3 goalWorld, AIType type)
 ////    {
 ////        switch (type)
 ////        {
+////            case AIType.AStar:
+////                return GetPathAStar(startWorld, goalWorld);
 ////            case AIType.DStar:
 ////                return GetPathDStar(startWorld, goalWorld);
-////            case AIType.AStar:
+////            case AIType.NavMesh:
+////                return GetPathNavMesh(startWorld, goalWorld);
 ////            default:
-////                return GetPathAStar(startWorld, goalWorld);
+////                return new Vector3[0];
 ////        }
 ////    }
 
-////    // ===========================================================
-////    //  A*ƒAƒ‹ƒSƒŠƒYƒ€
-////    // ===========================================================
+////    //============================================================
+////    // A* ã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ ï¼ˆé™çš„ï¼‰
+////    //============================================================
 ////    private Vector3[] GetPathAStar(Vector3 startWorld, Vector3 goalWorld)
 ////    {
-////        startWorld.y = goalWorld.y = 0f;
-
-////        if (Vector3.Distance(startWorld, goalWorld) <= reachThreshold)
-////            return new[] { goalWorld };
+////        Debug.Log("[A*] æ–°è¦çµŒè·¯æ¢ç´¢ã‚’å®Ÿè¡Œ");
 
 ////        var open = new List<Node>();
 ////        var closed = new HashSet<Vector3>();
+////        var nodes = new Dictionary<Vector3, Node>();
 
-////        var start = new Node
-////        {
-////            pos = startWorld,
-////            parent = null,
-////            g = 0f,
-////            f = Heuristic(startWorld, goalWorld)
-////        };
+////        Node start = new Node { pos = startWorld, g = 0, f = Heuristic(startWorld, goalWorld) };
+////        nodes[startWorld] = start;
 ////        open.Add(start);
 
-////        int iterations = 0;
-
-////        while (open.Count > 0 && iterations++ < maxNodes)
+////        while (open.Count > 0)
 ////        {
-////            Node current = GetLowestF(open);
+////            Node current = open.OrderBy(n => n.f).First();
 ////            open.Remove(current);
 ////            closed.Add(current.pos);
 
 ////            if (Vector3.Distance(current.pos, goalWorld) <= reachThreshold)
-////                return ReconstructPath(current, goalWorld);
-
-////            foreach (var next in Expand360(current, goalWorld))
 ////            {
-////                if (closed.Contains(next.pos)) continue;
+////                lastAStarPath = ReconstructPath(current, goalWorld);
+////                return lastAStarPath;
+////            }
 
-////                // áŠQ•¨‚ÉÕ“Ë‚·‚éê‡ƒXƒLƒbƒv
-////                if (IsObstacleBetween(current.pos, next.pos))
-////                    continue;
+////            foreach (var nextPos in ExpandNeighbors(current.pos))
+////            {
+////                if (closed.Contains(nextPos)) continue;
+////                if (IsObstacleBetween(current.pos, nextPos)) continue;
 
-////                Node same = open.Find(n => Approximately(n.pos, next.pos));
-////                if (same != null)
+////                float tentativeG = current.g + Vector3.Distance(current.pos, nextPos);
+////                if (!nodes.TryGetValue(nextPos, out Node next))
 ////                {
-////                    if (next.g < same.g)
-////                    {
-////                        same.g = next.g;
-////                        same.f = next.f;
-////                        same.parent = current;
-////                    }
+////                    next = new Node { pos = nextPos, g = Mathf.Infinity };
+////                    nodes[nextPos] = next;
+////                }
+
+////                if (tentativeG < next.g)
+////                {
+////                    next.parent = current;
+////                    next.g = tentativeG;
+////                    next.f = tentativeG + Heuristic(next.pos, goalWorld);
+////                    if (!open.Contains(next))
+////                        open.Add(next);
+////                }
+////            }
+////        }
+
+////        Debug.LogWarning("[A*] çµŒè·¯ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã§ã—ãŸã€‚");
+////        return new Vector3[0];
+////    }
+
+////    //============================================================
+////    // D* ã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ ï¼ˆå‹•çš„å†æ¢ç´¢ï¼‰
+////    //============================================================
+////    private Vector3[] GetPathDStar(Vector3 startWorld, Vector3 goalWorld)
+////    {
+////        Debug.Log("[D*] æ–°è¦çµŒè·¯æ¢ç´¢ã‚’å®Ÿè¡Œ");
+
+////        var open = new List<Node>();
+////        var closed = new HashSet<Vector3>();
+////        var nodes = new Dictionary<Vector3, Node>();
+
+////        Node start = new Node { pos = startWorld, g = 0, f = Heuristic(startWorld, goalWorld) };
+////        nodes[startWorld] = start;
+////        open.Add(start);
+
+////        while (open.Count > 0)
+////        {
+////            Node current = open.OrderBy(n => n.f).First();
+////            open.Remove(current);
+////            closed.Add(current.pos);
+
+////            if (Vector3.Distance(current.pos, goalWorld) <= reachThreshold)
+////            {
+////                lastDStarPath = ReconstructPath(current, goalWorld);
+////                dstarNodes = ConvertPathToNodes(lastDStarPath);
+////                Debug.Log("[D*] åˆå›æ¢ç´¢å®Œäº†ï¼ˆç‹¬ç«‹D*ï¼‰");
+////                return lastDStarPath;
+////            }
+
+////            foreach (var nextPos in ExpandNeighbors(current.pos))
+////            {
+////                if (closed.Contains(nextPos)) continue;
+////                if (IsObstacleBetween(current.pos, nextPos)) continue;
+
+////                float cost = Vector3.Distance(current.pos, nextPos);
+////                float tentativeG = current.g + cost;
+
+////                if (!nodes.TryGetValue(nextPos, out Node next))
+////                {
+////                    next = new Node { pos = nextPos, g = Mathf.Infinity };
+////                    nodes[nextPos] = next;
+////                }
+
+////                if (tentativeG < next.g)
+////                {
+////                    next.parent = current;
+////                    next.g = tentativeG;
+////                    next.f = tentativeG + Heuristic(next.pos, goalWorld);
+////                    if (!open.Contains(next))
+////                        open.Add(next);
+////                }
+////            }
+////        }
+
+////        Debug.LogWarning("[D*] çµŒè·¯ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã§ã—ãŸã€‚");
+////        return new Vector3[0];
+////    }
+
+////    //============================================================
+////    // NavMesh çµŒè·¯ï¼ˆå‚è€ƒï¼‰
+////    //============================================================
+////    private Vector3[] GetPathNavMesh(Vector3 startWorld, Vector3 goalWorld)
+////    {
+////        NavMeshPath path = new NavMeshPath();
+////        if (NavMesh.CalculatePath(startWorld, goalWorld, NavMesh.AllAreas, path))
+////            return path.corners;
+////        return new Vector3[0];
+////    }
+
+////    //============================================================
+////    // å‹•çš„éšœå®³ç‰©ã®ç™»éŒ²ï¼å‰Šé™¤
+////    //============================================================
+////    //public void OnDynamicObstacleChanged(Vector3 position, float radius, bool isBlocked)
+////    //{
+////    //    position.y = 0f;
+
+////    //    if (isBlocked)
+////    //        obstacles.Add(new Obstacle { pos = position, radius = radius });
+////    //    else
+////    //        obstacles.RemoveAll(o => Vector3.Distance(o.pos, position) < 0.01f);
+
+////    //    if (!initialObstacleRegistered)
+////    //        initialObstacleRegistered = true;
+
+////    //    // D* ã‚¨ãƒ¼ã‚¸ã‚§ãƒ³ãƒˆ â†’ å³å†æ¢ç´¢
+////    //    // A* ã‚¨ãƒ¼ã‚¸ã‚§ãƒ³ãƒˆ â†’ åˆå›ç™»éŒ²å®Œäº†æ™‚ã®ã¿çµŒè·¯è£œæ­£
+////    //    foreach (var agent in FindObjectsOfType<AgentController>())
+////    //    {
+////    //        var data = agent.GetData();
+////    //        if (data == null) continue;
+
+////    //        if (data.aiType == AIType.DStar)
+////    //        {
+////    //            var path = GetPathDStar(agent.transform.position, agent.GetGoalPosition());
+////    //            agent.SetPath(path);
+////    //        }
+////    //        else if (data.aiType == AIType.AStar && !agent.HasPath())
+////    //        {
+////    //            var path = GetPathAStar(agent.transform.position, agent.GetGoalPosition());
+////    //            agent.SetPath(path);
+////    //            Debug.Log($"[AIManager] A* åˆæœŸè£œæ­£çµŒè·¯ã‚’é©ç”¨ at {position}");
+////    //        }
+////    //    }
+////    //}
+////    public void OnDynamicObstacleChanged(Vector3 position, float radius, bool isBlocked)
+////    {
+////        position.y = 0f;
+
+////        if (isBlocked)
+////            obstacles.Add(new Obstacle { pos = position, radius = radius });
+////        else
+////            obstacles.RemoveAll(o => Vector3.Distance(o.pos, position) < 0.01f);
+
+////        if (!initialObstacleRegistered)
+////            initialObstacleRegistered = true;
+
+////        Debug.Log($"[AIManager] å‹•çš„éšœå®³ç‰©æ›´æ–°: pos={position}, radius={radius:F2}, blocked={isBlocked}");
+
+////        // --- D*ã‚¨ãƒ¼ã‚¸ã‚§ãƒ³ãƒˆã¯å³æ™‚å†æ¢ç´¢ ---
+////        // --- A*ã‚¨ãƒ¼ã‚¸ã‚§ãƒ³ãƒˆã¯åˆå›ç™»éŒ²å®Œäº†æ™‚ã®ã¿çµŒè·¯è£œæ­£ ---
+////        foreach (var agent in FindObjectsOfType<AgentController>())
+////        {
+////            var data = agent.GetData();
+////            if (data == null) continue;
+
+////            // -------------------------
+////            // D* å†æ¢ç´¢å‡¦ç†
+////            // -------------------------
+////            if (data.aiType == AIType.DStar)
+////            {
+////                Vector3 start = agent.transform.position;
+////                Vector3 goal = agent.GetGoalPosition();
+
+////                Debug.Log($"[D*] {agent.name} å†æ¢ç´¢é–‹å§‹: start={start}, goal={goal}");
+
+////                var newPath = GetPathDStar(start, goal);
+
+////                // ç„¡åŠ¹ãªçµŒè·¯ã‚’ä¸Šæ›¸ãã—ãªã„ã‚¬ãƒ¼ãƒ‰
+////                if (newPath == null || newPath.Length <= 1)
+////                {
+////                    Debug.LogWarning($"[D*] {agent.name} ã®å†æ¢ç´¢çµæœãŒç„¡åŠ¹ (len={newPath?.Length ?? 0}) â†’ çµŒè·¯ä¸Šæ›¸ãã›ãšä¿æŒ");
+////                    continue;
+////                }
+
+////                Debug.Log($"[D*] {agent.name} ã«æ–°çµŒè·¯ã‚’é©ç”¨: {newPath.Length} ãƒãƒ¼ãƒ‰");
+////                agent.SetPath(newPath);
+////            }
+
+////            // -------------------------
+////            // A* åˆæœŸè£œæ­£å‡¦ç†ï¼ˆåˆå›ã®ã¿ï¼‰
+////            // -------------------------
+////            else if (data.aiType == AIType.AStar && !agent.HasPath())
+////            {
+////                Vector3 start = agent.transform.position;
+////                Vector3 goal = agent.GetGoalPosition();
+
+////                var newPath = GetPathAStar(start, goal);
+
+////                if (newPath != null && newPath.Length > 1)
+////                {
+////                    agent.SetPath(newPath);
+////                    Debug.Log($"[AIManager] A* åˆæœŸè£œæ­£çµŒè·¯ã‚’é©ç”¨: {agent.name} ({newPath.Length} ãƒãƒ¼ãƒ‰) at {position}");
 ////                }
 ////                else
 ////                {
-////                    open.Add(next);
+////                    Debug.LogWarning($"[AIManager] {agent.name} ã®A*è£œæ­£çµŒè·¯ãŒç„¡åŠ¹ (len={newPath?.Length ?? 0}) â†’ ä¸Šæ›¸ãã›ãš");
 ////                }
 ////            }
 ////        }
-
-////        Debug.LogWarning("[A*] Œo˜H‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ‚Å‚µ‚½B");
-////        return new[] { goalWorld };
 ////    }
 
-////    // ===========================================================
-////    //  D*ƒAƒ‹ƒSƒŠƒYƒ€iŠÈˆÕÄ’TõŒ^j
-////    // ===========================================================
-////    private Vector3[] GetPathDStar(Vector3 startWorld, Vector3 goalWorld)
-////    {
-////        var path = GetPathAStar(startWorld, goalWorld);
-////        if (path == null || path.Length == 0) return path;
 
-////        for (int i = 0; i < path.Length - 1; i++)
-////        {
-////            if (IsObstacleBetween(path[i], path[i + 1]))
-////            {
-////                Debug.Log("[D*] “®“IáŠQ•¨‚ğŒŸ’m ¨ Ä’Tõ");
-////                return GetPathAStar(path[i], goalWorld);
-////            }
-////        }
-////        return path;
-////    }
+////    public bool IsObstacleDataReady() => initialObstacleRegistered;
 
-////    // ===========================================================
-////    //  áŠQ•¨”»’èiCollider”ñˆË‘¶j
-////    // ===========================================================
+////    //============================================================
+////    // å…±é€šè£œåŠ©é–¢æ•°ç¾¤
+////    //============================================================
 ////    private bool IsObstacleBetween(Vector3 a, Vector3 b)
 ////    {
-////        foreach (var obs in obstaclePositions)
+////        foreach (var o in obstacles)
 ////        {
-////            if (Vector3.Distance(obs, (a + b) / 2f) < stepSize * 0.5f)
+////            Vector3 closest = ClosestPointOnSegment(o.pos, a, b);
+////            float distance = Vector3.Distance(o.pos, closest);
+////            if (distance <= o.radius)
 ////                return true;
 ////        }
 ////        return false;
 ////    }
 
-////    // ===========================================================
-////    //  ‹¤’Êƒ†[ƒeƒBƒŠƒeƒB
-////    // ===========================================================
+////    private Vector3 ClosestPointOnSegment(Vector3 point, Vector3 a, Vector3 b)
+////    {
+////        Vector3 ab = b - a;
+////        float t = Vector3.Dot(point - a, ab) / ab.sqrMagnitude;
+////        t = Mathf.Clamp01(t);
+////        return a + ab * t;
+////    }
+
+////    private IEnumerable<Vector3> ExpandNeighbors(Vector3 pos)
+////    {
+////        for (int dx = -1; dx <= 1; dx++)
+////            for (int dz = -1; dz <= 1; dz++)
+////            {
+////                if (dx == 0 && dz == 0) continue;
+////                yield return pos + new Vector3(dx * gridSize, 0, dz * gridSize);
+////            }
+////    }
+
 ////    private float Heuristic(Vector3 a, Vector3 b) => Vector3.Distance(a, b);
 
-////    private Node GetLowestF(List<Node> list)
+////    private Vector3[] ReconstructPath(Node endNode, Vector3 goal)
 ////    {
-////        Node best = list[0];
-////        for (int i = 1; i < list.Count; i++)
-////            if (list[i].f < best.f)
-////                best = list[i];
-////        return best;
-////    }
-
-////    private IEnumerable<Node> Expand360(Node current, Vector3 goal)
-////    {
-////        float step = 360f / directionResolution;
-////        for (int i = 0; i < directionResolution; i++)
+////        var path = new List<Vector3>();
+////        var current = endNode;
+////        while (current != null)
 ////        {
-////            float angle = i * step;
-////            Vector3 dir = new Vector3(Mathf.Cos(angle * Mathf.Deg2Rad), 0, Mathf.Sin(angle * Mathf.Deg2Rad));
-////            Vector3 np = current.pos + dir * stepSize;
-
-////            float g = current.g + stepSize;
-////            float f = g + Heuristic(np, goal);
-
-////            yield return new Node
-////            {
-////                pos = np,
-////                parent = current,
-////                g = g,
-////                f = f
-////            };
+////            path.Insert(0, current.pos);
+////            current = current.parent;
 ////        }
-////    }
-
-////    private Vector3[] ReconstructPath(Node goalNode, Vector3 goalWorld)
-////    {
-////        var path = new List<Vector3> { goalWorld };
-////        Node n = goalNode;
-////        while (n != null)
-////        {
-////            path.Add(n.pos);
-////            n = n.parent;
-////        }
-////        path.Reverse();
+////        path.Add(goal);
 ////        return path.ToArray();
 ////    }
 
-////    private bool Approximately(Vector3 a, Vector3 b)
-////        => (a - b).sqrMagnitude <= 1e-4f;
+////    private List<Node> ConvertPathToNodes(Vector3[] path)
+////    {
+////        return path.Select(p => new Node { pos = p }).ToList();
+////    }
+
+////    //============================================================
+////    // Gizmoæç”»
+////    //============================================================
+////    private void OnDrawGizmos()
+////    {
+////        if (!showGizmos) return;
+
+////        Gizmos.color = Color.yellow;
+////        if (lastAStarPath != null && lastAStarPath.Length > 1)
+////            for (int i = 0; i < lastAStarPath.Length - 1; i++)
+////                Gizmos.DrawLine(lastAStarPath[i], lastAStarPath[i + 1]);
+
+////        Gizmos.color = Color.cyan;
+////        if (lastDStarPath != null && lastDStarPath.Length > 1)
+////            for (int i = 0; i < lastDStarPath.Length - 1; i++)
+////                Gizmos.DrawLine(lastDStarPath[i], lastDStarPath[i + 1]);
+////    }
+
+////    // AgentController ã‹ã‚‰å‚ç…§ã•ã‚Œã‚‹å…¬é–‹ãƒ¡ã‚½ãƒƒãƒ‰
+////    public bool HasObstacleBetween(Vector3 a, Vector3 b) => IsObstacleBetween(a, b);
 ////}
-
-
-
-//////using System.Collections.Generic;
-//////using UnityEngine;
-
-//////public class AIManager : MonoBehaviour
-//////{
-//////    [SerializeField] private LayerMask obstacleMask;   // áŠQ•¨‚ÌƒŒƒCƒ„[
-//////    [SerializeField] private float stepSize = 1.0f;    // 1ƒXƒeƒbƒv‚Ì’·‚³
-//////    [SerializeField] private int maxNodes = 1000;      // ƒZ[ƒtƒeƒBãŒÀ
-//////    [SerializeField] private float reachThreshold = 1f;// ƒS[ƒ‹“’B‹——£
-//////    [SerializeField] private float agentRadius = 0.25f;// ƒG[ƒWƒFƒ“ƒg‚Ì”¼ŒaiÕ“Ë—]—Tj
-//////    [SerializeField, Range(8, 180)] private int directionResolution = 72; // ’Tõ•ûŒü”i‘S•ûŒüj
-
-//////    // ====== NodeƒNƒ‰ƒX ======
-//////    private class Node
-//////    {
-//////        public Vector3 pos;
-//////        public Node parent;  // null ‹–‰Â
-//////        public float g;      // ŠJn‚©‚ç‚ÌÀƒRƒXƒg
-//////        public float f;      // f = g + h
-//////    }
-
-//////    // ===========================================================
-//////    //  ŒöŠJAPIFAIType ‚É‰‚¶‚ÄA* / D*‚ğØ‚è‘Ö‚¦‚é
-//////    // ===========================================================
-//////    public Vector3[] GetPath(Vector3 startWorld, Vector3 goalWorld, AIType type)
-//////    {
-//////        switch (type)
-//////        {
-//////            case AIType.DStar:
-//////                return GetPathDStar(startWorld, goalWorld);
-//////            case AIType.AStar:
-//////            default:
-//////                return GetPathAStar(startWorld, goalWorld);
-//////        }
-//////    }
-
-//////    // ===========================================================
-//////    //  A* ƒAƒ‹ƒSƒŠƒYƒ€–{‘ÌiŠù‘¶ˆ—‚ğ‚»‚Ì‚Ü‚ÜˆÚAj
-//////    // ===========================================================
-//////    private Vector3[] GetPathAStar(Vector3 startWorld, Vector3 goalWorld)
-//////    {
-//////        startWorld.y = goalWorld.y = 0f;
-
-//////        if (Vector3.Distance(startWorld, goalWorld) <= reachThreshold)
-//////            return new[] { goalWorld };
-
-//////        var open = new List<Node>();
-//////        var closed = new HashSet<Vector3>();
-
-//////        var start = new Node
-//////        {
-//////            pos = startWorld,
-//////            parent = null,
-//////            g = 0f,
-//////            f = Heuristic(startWorld, goalWorld)
-//////        };
-//////        open.Add(start);
-
-//////        int iterations = 0;
-
-//////        while (open.Count > 0 && iterations++ < maxNodes)
-//////        {
-//////            Node current = GetLowestF(open);
-//////            open.Remove(current);
-//////            closed.Add(current.pos);
-
-//////            // ƒS[ƒ‹“’B”»’è
-//////            if (Vector3.Distance(current.pos, goalWorld) <= reachThreshold)
-//////                return ReconstructPath(current, goalWorld);
-
-//////            // ‹ß–T“WŠJ
-//////            foreach (var next in Expand360(current, goalWorld))
-//////            {
-//////                if (closed.Contains(next.pos)) continue;
-
-//////                // current ¨ next ‚ÉáŠQ•¨‚ª‚ ‚é‚©ƒ`ƒFƒbƒN
-//////                Vector3 dir = (next.pos - current.pos);
-//////                float dist = dir.magnitude;
-//////                if (dist > 0f)
-//////                {
-//////                    dir /= dist;
-//////                    if (Physics.SphereCast(current.pos, agentRadius, dir, out _, dist, obstacleMask))
-//////                        continue;
-//////                }
-
-//////                Node same = open.Find(n => Approximately(n.pos, next.pos));
-//////                if (same != null)
-//////                {
-//////                    if (next.g < same.g)
-//////                    {
-//////                        same.g = next.g;
-//////                        same.f = next.f;
-//////                        same.parent = current;
-//////                    }
-//////                }
-//////                else
-//////                {
-//////                    open.Add(next);
-//////                }
-//////            }
-//////        }
-
-//////        Debug.LogWarning("[A*] Œo˜H‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ‚Å‚µ‚½BƒtƒH[ƒ‹ƒoƒbƒNi’¼sj‚µ‚Ü‚·B");
-//////        return new[] { goalWorld };
-//////    }
-
-//////    // ===========================================================
-//////    //  D* ƒAƒ‹ƒSƒŠƒYƒ€iŠÈˆÕ“®“IÄ’Tõ”Åj
-//////    // ===========================================================
-//////    private Vector3[] GetPathDStar(Vector3 startWorld, Vector3 goalWorld)
-//////    {
-//////        // ‰‰ñ‚ÍA*‚Å’Tõ
-//////        var path = GetPathAStar(startWorld, goalWorld);
-//////        if (path == null || path.Length == 0) return path;
-
-//////        var verifiedPath = new List<Vector3>();
-
-//////        for (int i = 0; i < path.Length - 1; i++)
-//////        {
-//////            Vector3 current = path[i];
-//////            Vector3 next = path[i + 1];
-//////            Vector3 dir = next - current;
-//////            float dist = dir.magnitude;
-
-//////            // Œo˜Hã‚ÉáŠQ•¨‚ªV‚½‚ÉoŒ»‚µ‚Ä‚¢‚È‚¢‚©Äƒ`ƒFƒbƒN
-//////            if (Physics.SphereCast(current, agentRadius, dir.normalized, out var hit, dist, obstacleMask))
-//////            {
-//////                Debug.Log("[D*] “®“IáŠQ•¨‚ğŒŸ’m ¨ Ä’Tõ‚ğÀs");
-//////                var newPath = GetPathAStar(current, goalWorld); // ‹ÇŠÄ’Tõ
-//////                if (newPath != null && newPath.Length > 0)
-//////                {
-//////                    verifiedPath.AddRange(newPath);
-//////                    return verifiedPath.ToArray();
-//////                }
-//////            }
-
-//////            verifiedPath.Add(current);
-//////        }
-
-//////        verifiedPath.Add(goalWorld);
-//////        return verifiedPath.ToArray();
-//////    }
-
-//////    // ===========================================================
-//////    //  ‹¤’Êƒ†[ƒeƒBƒŠƒeƒBŒQ
-//////    // ===========================================================
-//////    private float Heuristic(Vector3 a, Vector3 b) => Vector3.Distance(a, b);
-
-//////    private Node GetLowestF(List<Node> list)
-//////    {
-//////        Node best = list[0];
-//////        float bestF = best.f;
-//////        for (int i = 1; i < list.Count; i++)
-//////        {
-//////            if (list[i].f < bestF)
-//////            {
-//////                best = list[i];
-//////                bestF = list[i].f;
-//////            }
-//////        }
-//////        return best;
-//////    }
-
-//////    // 360‹•ûŒü‚É•ªŠ„‚µ‚Ä’Tõ
-//////    private IEnumerable<Node> Expand360(Node current, Vector3 goal)
-//////    {
-//////        float angleStep = 360f / directionResolution;
-//////        for (int i = 0; i < directionResolution; i++)
-//////        {
-//////            float angle = i * angleStep;
-//////            Vector3 dir = new Vector3(Mathf.Cos(angle * Mathf.Deg2Rad), 0, Mathf.Sin(angle * Mathf.Deg2Rad));
-//////            Vector3 np = current.pos + dir * stepSize;
-
-//////            float g = current.g + stepSize;
-//////            float f = g + Heuristic(np, goal);
-
-//////            yield return new Node
-//////            {
-//////                pos = np,
-//////                parent = current,
-//////                g = g,
-//////                f = f
-//////            };
-//////        }
-//////    }
-
-//////    private Vector3[] ReconstructPath(Node goalNode, Vector3 goalWorld)
-//////    {
-//////        var path = new List<Vector3> { goalWorld };
-//////        Node n = goalNode;
-//////        while (n != null)
-//////        {
-//////            path.Add(n.pos);
-//////            n = n.parent;
-//////        }
-//////        path.Reverse();
-//////        return path.ToArray();
-//////    }
-
-//////    private bool Approximately(Vector3 a, Vector3 b)
-//////        => (a - b).sqrMagnitude <= 1e-4f;
-//////}
-
-
-////////using System.Collections.Generic;
-////////using UnityEngine;
-
-////////public class AIManager : MonoBehaviour
-////////{
-////////    [SerializeField] private LayerMask obstacleMask;   // áŠQ•¨‚ÌƒŒƒCƒ„[
-////////    [SerializeField] private float stepSize = 1.0f;    // 1ƒXƒeƒbƒv‚Ì’·‚³
-////////    [SerializeField] private int maxNodes = 1000;      // ƒZ[ƒtƒeƒBãŒÀ
-////////    [SerializeField] private float reachThreshold = 1f;// ƒS[ƒ‹“’B‹——£
-////////    [SerializeField] private float agentRadius = 0.25f;// ƒG[ƒWƒFƒ“ƒg‚Ì”¼ŒaiÕ“Ë—]—Tj
-////////    [SerializeField, Range(8, 180)] private int directionResolution = 72; // ’Tõ•ûŒü”i‘S•ûŒüj
-
-////////    private class Node
-////////    {
-////////        public Vector3 pos;
-////////        public Node parent;  // null ‹–‰Â
-////////        public float g;      // ŠJn‚©‚ç‚ÌÀƒRƒXƒg
-////////        public float f;      // f = g + h
-////////    }
-
-////////    public Vector3[] GetPath(Vector3 startWorld, Vector3 goalWorld)
-////////    {
-////////        startWorld.y = goalWorld.y = 0f;
-
-////////        if (Vector3.Distance(startWorld, goalWorld) <= reachThreshold)
-////////            return new[] { goalWorld };
-
-////////        var open = new List<Node>();
-////////        var closed = new HashSet<Vector3>();
-
-////////        var start = new Node
-////////        {
-////////            pos = startWorld,
-////////            parent = null,
-////////            g = 0f,
-////////            f = Heuristic(startWorld, goalWorld)
-////////        };
-////////        open.Add(start);
-
-////////        int iterations = 0;
-
-////////        while (open.Count > 0 && iterations++ < maxNodes)
-////////        {
-////////            Node current = GetLowestF(open);
-////////            open.Remove(current);
-////////            closed.Add(current.pos);
-
-////////            // ƒS[ƒ‹“’B”»’è
-////////            if (Vector3.Distance(current.pos, goalWorld) <= reachThreshold)
-////////                return ReconstructPath(current, goalWorld);
-
-////////            // ‹ß–T“WŠJ
-////////            foreach (var next in Expand360(current, goalWorld))
-////////            {
-////////                if (closed.Contains(next.pos)) continue;
-
-////////                // current ¨ next ‚ÉáŠQ•¨‚ª‚ ‚é‚©ƒ`ƒFƒbƒN
-////////                Vector3 dir = (next.pos - current.pos);
-////////                float dist = dir.magnitude;
-////////                if (dist > 0f)
-////////                {
-////////                    dir /= dist;
-////////                    if (Physics.SphereCast(current.pos, agentRadius, dir, out _, dist, obstacleMask))
-////////                        continue;
-////////                }
-
-////////                Node same = open.Find(n => Approximately(n.pos, next.pos));
-////////                if (same != null)
-////////                {
-////////                    if (next.g < same.g)
-////////                    {
-////////                        same.g = next.g;
-////////                        same.f = next.f;
-////////                        same.parent = current;
-////////                    }
-////////                }
-////////                else
-////////                {
-////////                    open.Add(next);
-////////                }
-////////            }
-////////        }
-
-////////        Debug.LogWarning("[A*] Œo˜H‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ‚Å‚µ‚½BƒtƒH[ƒ‹ƒoƒbƒNi’¼sj‚µ‚Ü‚·B");
-////////        return new[] { goalWorld };
-////////    }
-
-////////    private float Heuristic(Vector3 a, Vector3 b) => Vector3.Distance(a, b);
-
-////////    private Node GetLowestF(List<Node> list)
-////////    {
-////////        Node best = list[0];
-////////        float bestF = best.f;
-////////        for (int i = 1; i < list.Count; i++)
-////////        {
-////////            if (list[i].f < bestF)
-////////            {
-////////                best = list[i];
-////////                bestF = list[i].f;
-////////            }
-////////        }
-////////        return best;
-////////    }
-
-////////    // 360‹•ûŒü‚É•ªŠ„‚µ‚Ä’Tõ
-////////    private IEnumerable<Node> Expand360(Node current, Vector3 goal)
-////////    {
-////////        float angleStep = 360f / directionResolution;
-////////        for (int i = 0; i < directionResolution; i++)
-////////        {
-////////            float angle = i * angleStep;
-////////            Vector3 dir = new Vector3(Mathf.Cos(angle * Mathf.Deg2Rad), 0, Mathf.Sin(angle * Mathf.Deg2Rad));
-////////            Vector3 np = current.pos + dir * stepSize;
-
-////////            float g = current.g + stepSize;
-////////            float f = g + Heuristic(np, goal);
-
-////////            yield return new Node
-////////            {
-////////                pos = np,
-////////                parent = current,
-////////                g = g,
-////////                f = f
-////////            };
-////////        }
-////////    }
-
-////////    private Vector3[] ReconstructPath(Node goalNode, Vector3 goalWorld)
-////////    {
-////////        var path = new List<Vector3> { goalWorld };
-////////        Node n = goalNode;
-////////        while (n != null)
-////////        {
-////////            path.Add(n.pos);
-////////            n = n.parent;
-////////        }
-////////        path.Reverse();
-////////        return path.ToArray();
-////////    }
-
-////////    private bool Approximately(Vector3 a, Vector3 b)
-////////        => (a - b).sqrMagnitude <= 1e-4f;
-////////}

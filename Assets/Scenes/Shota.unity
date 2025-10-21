@@ -195,8 +195,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbcc2b1cb1d6e4043bd8c0cdb19133a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  switchInterval: 1.5
-  blockRadius: 2
+  interval: 2
+  radius: 2
+  isBlocked: 0
 --- !u!65 &221136855
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -318,8 +319,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbcc2b1cb1d6e4043bd8c0cdb19133a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  switchInterval: 1.5
-  blockRadius: 1
+  interval: 3
+  radius: 2
+  isBlocked: 0
 --- !u!65 &228704028
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -739,7 +741,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 3212ca89a4caa1c488b0fdb39f965b06, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: 4ef80e36334f90b4cadc9b7995beb40e, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1 &577739582
 GameObject:
@@ -767,12 +769,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 577739582}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 30908b94dc274474fb885a69fc29bfc4, type: 3}
+  m_Script: {fileID: 11500000, guid: 41b601074353eac42bb6219fcf21de86, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  aiManager: {fileID: 1345644348}
-  uiManager: {fileID: 2064279455}
-  heatmapManager: {fileID: 133077073}
+  autoStart: 0
 --- !u!4 &577739584
 Transform:
   m_ObjectHideFlags: 0
@@ -806,7 +806,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2147694342126131049, guid: aef8380cad8863d4398e1a9c9c1a12a6, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3809036779229149896, guid: aef8380cad8863d4398e1a9c9c1a12a6, type: 3}
       propertyPath: m_LocalPosition.x
@@ -978,8 +978,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbcc2b1cb1d6e4043bd8c0cdb19133a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  switchInterval: 2
-  blockRadius: 2
+  interval: 3
+  radius: 2
+  isBlocked: 0
 --- !u!1 &1274392385
 GameObject:
   m_ObjectHideFlags: 0
@@ -1143,14 +1144,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1345644347}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 91615a66798cd8a4f84edd9757c4e203, type: 3}
+  m_Script: {fileID: 11500000, guid: 100198874f2892d48ad335522f090a53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stepSize: 1
-  maxNodes: 1000
-  reachThreshold: 1
-  directionResolution: 36
-  processInterval: 0.02
+  gridSize: 1
+  reachThreshold: 0.5
+  showGizmos: 1
 --- !u!4 &1345644349
 Transform:
   m_ObjectHideFlags: 0
@@ -1212,12 +1211,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   obstacleMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
   stepSize: 1
   maxNodes: 1000
   reachThreshold: 1
   allyRadius: 0.25
-  directionResolution: 72
+  directionResolution: 36
 --- !u!1001 &1808534768
 PrefabInstance:
   m_ObjectHideFlags: 0
