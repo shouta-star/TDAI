@@ -1,0 +1,7 @@
+Frame,Time,Object,Type,State,Action,Target,TargetX,TargetY,TargetZ,CurrentX,CurrentY,CurrentZ,NextX,NextY,NextZ,AIType
+1,0.00,AgentPrefab,Agent,IdleState,Idling,Goal,20.00,0.00,20.00,0.00,0.00,0.00,0.00,0.00,0.00,NavMesh
+1,0.00,AgentPrefab,Agent,SearchState,Searching Path,Goal,20.00,0.00,20.00,0.00,0.00,0.00,0.00,0.00,0.00,NavMesh
+2,0.00,AgentPrefab,Agent,MoveState,Moving,Goal,20.00,0.00,20.00,0.00,0.00,0.00,0.00,0.24,0.00,NavMesh
+179,5.87,AgentPrefab,Agent,SearchState,Searching Path,Goal,20.00,0.00,20.00,7.90,0.09,5.21,8.33,0.08,5.50,NavMesh
+180,5.90,AgentPrefab,Agent,MoveState,Moving,Goal,20.00,0.00,20.00,7.90,0.09,5.21,8.33,0.08,5.50,NavMesh
+473,15.67,AgentPrefab,Agent,GoalState,GoalReached,Goal,20.00,0.00,20.00,20.00,0.29,20.00,20.00,0.29,20.00,NavMesh
