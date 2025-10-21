@@ -4,6 +4,8 @@ public class IdleState : AgentBaseState
 {
     public override void Enter(AgentController agent)
     {
+        //LogAgentStatus(agent, "Idling");
+
         //Debug.Log($"[{agent.name}] IdleState: ŠJŽn");
     }
 

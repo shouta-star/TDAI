@@ -6,7 +6,7 @@ public class GoalState : AgentBaseState
     {
         Debug.Log($"[Goal:Enter] {agent.name} self={agent.transform.position} goal={agent.GetGoalPosition()} dist={Vector3.Distance(agent.transform.position, agent.GetGoalPosition()):F3}");
 
-        LogAgentStatus(agent, "GoalReached");
+        LogAgentStatus(agent, "Goal");
         //Debug.Log($"[{agent.name}] GoalState: ƒS[ƒ‹“’B");
         agent.reachedGoal = true;
         GameManager.Instance.ReportAgentGoal(agent);

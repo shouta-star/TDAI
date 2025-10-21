@@ -7,12 +7,14 @@ public class MoveState : AgentBaseState
 
     public override void Enter(AgentController agent)
     {
-        LogAgentStatus(agent, "Moving");
+        //LogAgentStatus(agent, "Moving");
         lastPosition = agent.transform.position;
     }
 
     public override void Execute(AgentController agent)
     {
+        LogAgentStatus(agent, "Moving");
+
         Debug.Log($"[Move:Exec-A] {agent.name} idx={agent.pathIndex} len={agent.currentPath.Length}");
 
         if (agent.currentPath == null || agent.currentPath.Length == 0)

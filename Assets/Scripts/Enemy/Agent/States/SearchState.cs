@@ -4,8 +4,6 @@ public class SearchState : AgentBaseState
 {
     public override void Enter(AgentController agent)
     {
-        LogAgentStatus(agent, "Searching Path");
-
         // 経路が未設定または空のときのみ再計算を行う
         if (agent.currentPath == null || agent.currentPath.Length <= 1)
         {
@@ -15,6 +13,8 @@ public class SearchState : AgentBaseState
 
     public override void Execute(AgentController agent)
     {
+        LogAgentStatus(agent, "Searching");
+
         // 経路が存在すれば移動ステートへ遷移
         if (agent.currentPath != null && agent.currentPath.Length > 0)
         {
