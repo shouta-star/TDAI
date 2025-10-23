@@ -181,10 +181,24 @@ public class AIManager : MonoBehaviour
                 open.Remove(current);
                 closed.Add(current.pos);
 
+                //if (Vector3.Distance(current.pos, goalWorld) <= reachThreshold)
+                //{
+                //    lastDStarPath = ReconstructPath(current, goalWorld);
+                //    dstarNodes = ConvertPathToNodes(lastDStarPath);
+                //    Debug.Log("[D*] 探索完了");
+                //    break;
+                //}
                 if (Vector3.Distance(current.pos, goalWorld) <= reachThreshold)
                 {
+                    // 経路再構築
                     lastDStarPath = ReconstructPath(current, goalWorld);
+
+                    // 経路を滑らかにスムージング
+                    lastDStarPath = SmoothPath(lastDStarPath);
+
+                    // ノードリストに変換
                     dstarNodes = ConvertPathToNodes(lastDStarPath);
+
                     Debug.Log("[D*] 探索完了");
                     break;
                 }
@@ -322,21 +336,41 @@ public class AIManager : MonoBehaviour
         return a + ab * t;
     }
 
+    //private IEnumerable<Vector3> ExpandNeighbors(Vector3 pos)
+    //{
+    //    float angleStep = 360f / directionSamples;
+    //    for (int i = 0; i < directionSamples; i++)
+    //    {
+    //        float rad = angleStep * i * Mathf.Deg2Rad;
+    //        float nx = pos.x + Mathf.Cos(rad) * stepLength;
+    //        float nz = pos.z + Mathf.Sin(rad) * stepLength;
+
+    //        nx = Mathf.Round(nx / gridSize) * gridSize;
+    //        nz = Mathf.Round(nz / gridSize) * gridSize;
+
+    //        Vector3 neighbor = new Vector3(nx, pos.y, nz);
+    //        if (IsObstacleBetween(pos, neighbor)) continue;
+    //        yield return neighbor;
+    //    }
+    //}
     private IEnumerable<Vector3> ExpandNeighbors(Vector3 pos)
     {
         float angleStep = 360f / directionSamples;
+
         for (int i = 0; i < directionSamples; i++)
         {
             float rad = angleStep * i * Mathf.Deg2Rad;
             float nx = pos.x + Mathf.Cos(rad) * stepLength;
             float nz = pos.z + Mathf.Sin(rad) * stepLength;
 
-            nx = Mathf.Round(nx / gridSize) * gridSize;
-            nz = Mathf.Round(nz / gridSize) * gridSize;
+            // ここを "高精度スナップ" に変更
+            nx = Mathf.Round(nx * 10f) / 10f;
+            nz = Mathf.Round(nz * 10f) / 10f;
 
             Vector3 neighbor = new Vector3(nx, pos.y, nz);
-            if (IsObstacleBetween(pos, neighbor)) continue;
-            yield return neighbor;
+
+            if (!IsObstacleBetween(pos, neighbor))
+                yield return neighbor;
         }
     }
 
@@ -358,6 +392,30 @@ public class AIManager : MonoBehaviour
         path.Add(goal);
         return path.ToArray();
     }
+
+    // ============================================================
+    // 経路スムージング（NavMesh風に滑らか化）
+    // ============================================================
+    private Vector3[] SmoothPath(Vector3[] rawPath)
+    {
+        if (rawPath == null || rawPath.Length < 3) return rawPath;
+
+        List<Vector3> smooth = new List<Vector3>();
+        smooth.Add(rawPath[0]);
+
+        for (int i = 2; i < rawPath.Length; i++)
+        {
+            // 前の点から今の点まで直線で障害物が無ければ中間点スキップ
+            if (!IsObstacleBetween(smooth.Last(), rawPath[i]))
+                continue;
+
+            smooth.Add(rawPath[i - 1]);
+        }
+
+        smooth.Add(rawPath.Last());
+        return smooth.ToArray();
+    }
+
 
     private List<Node> ConvertPathToNodes(Vector3[] path)
     {
