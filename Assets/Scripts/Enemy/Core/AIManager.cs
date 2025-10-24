@@ -65,6 +65,8 @@ public class AIManager : MonoBehaviour
             case AIType.AStar: return GetPathAStar(startWorld, goalWorld);
             case AIType.DStar: return GetPathDStar(startWorld, goalWorld);
             case AIType.NavMesh: return GetPathNavMesh(startWorld, goalWorld);
+            case AIType.PotentialField: return GetPathPotential(startWorld, goalWorld);
+            case AIType.RRT: return GetPathRRT(startWorld, goalWorld);
             default: return new Vector3[0];
         }
     }
@@ -277,6 +279,133 @@ public class AIManager : MonoBehaviour
 
         return result;
     }
+
+    //============================================================
+    // PotentialField
+    //============================================================
+    private Vector3[] GetPathPotential(Vector3 startWorld, Vector3 goalWorld)
+    {
+        Stopwatch sw = Stopwatch.StartNew();
+        List<Vector3> path = new List<Vector3> { startWorld };
+
+        float step = stepLength * 0.5f;
+        const int MAX_ITER = 1000;
+        const float goalThreshold = 0.5f;
+        const float kAtt = 1.0f;
+        const float kRep = 5.0f;
+        const float influenceRange = 3.0f;
+
+        Vector3 current = startWorld;
+
+        for (int i = 0; i < MAX_ITER; i++)
+        {
+            Vector3 attractive = (goalWorld - current).normalized * kAtt;
+            Vector3 repulsive = Vector3.zero;
+
+            foreach (var o in obstacles)
+            {
+                float d = Vector3.Distance(current, o.pos);
+                if (d < influenceRange)
+                {
+                    float strength = kRep * (1.0f / d - 1.0f / influenceRange) / (d * d);
+                    repulsive += (current - o.pos).normalized * strength;
+                }
+            }
+
+            Vector3 force = attractive + repulsive;
+            if (force.magnitude < 0.001f) break; // 局所最小値対策
+            force.Normalize();
+
+            Vector3 next = current + force * step;
+            if (IsObstacleBetween(current, next)) break;
+
+            path.Add(next);
+            current = next;
+
+            if (Vector3.Distance(current, goalWorld) < goalThreshold)
+            {
+                path.Add(goalWorld);
+                break;
+            }
+        }
+
+        sw.Stop();
+        CSVLogger.Log(
+            type: "Performance",
+            name: "AIManager",
+            state: "Pathfinding",
+            action: "Executed",
+            target: "PotentialField",
+            targetPos: Vector3.zero,
+            currentPos: Vector3.zero,
+            nextPos: Vector3.zero,
+            aiType: "PotentialField",
+            cpuMs: (float)sw.Elapsed.TotalMilliseconds
+        );
+
+        return path.ToArray();
+    }
+
+    //============================================================
+    // RRT
+    //============================================================
+    private Vector3[] GetPathRRT(Vector3 startWorld, Vector3 goalWorld)
+    {
+        Stopwatch sw = Stopwatch.StartNew();
+        const int MAX_NODES = 3000;
+        float step = stepLength;
+        const float goalThreshold = 2.0f;
+        const float sampleRange = 20f;
+
+        List<Node> tree = new List<Node> { new Node { pos = startWorld } };
+        Node goalNode = null;
+
+        for (int i = 0; i < MAX_NODES; i++)
+        {
+            // ランダムサンプリング
+            Vector3 rand = startWorld + new Vector3(
+                Random.Range(-sampleRange, sampleRange),
+                0,
+                Random.Range(-sampleRange, sampleRange)
+            );
+
+            // 最も近いノードを探す
+            Node nearest = tree.OrderBy(n => Vector3.Distance(n.pos, rand)).First();
+            Vector3 dir = (rand - nearest.pos).normalized;
+            Vector3 newPos = nearest.pos + dir * step;
+
+            // 障害物判定
+            if (IsObstacleBetween(nearest.pos, newPos)) continue;
+
+            Node newNode = new Node { pos = newPos, parent = nearest };
+            tree.Add(newNode);
+
+            if (Vector3.Distance(newPos, goalWorld) < goalThreshold)
+            {
+                goalNode = new Node { pos = goalWorld, parent = newNode };
+                break;
+            }
+        }
+
+        Vector3[] result = goalNode != null ? ReconstructPath(goalNode, goalWorld) : new Vector3[0];
+
+        sw.Stop();
+        CSVLogger.Log(
+            type: "Performance",
+            name: "AIManager",
+            state: "Pathfinding",
+            action: "Executed",
+            target: "RRT",
+            targetPos: Vector3.zero,
+            currentPos: Vector3.zero,
+            nextPos: Vector3.zero,
+            aiType: "RRT",
+            cpuMs: (float)sw.Elapsed.TotalMilliseconds
+        );
+
+        return result;
+    }
+
 
     //============================================================
     // 動的障害物通知

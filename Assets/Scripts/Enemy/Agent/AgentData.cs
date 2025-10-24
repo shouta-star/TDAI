@@ -18,5 +18,7 @@ public enum AIType
 {
     AStar,
     DStar,
-    NavMesh
+    NavMesh,
+    PotentialField,
+    RRT
 }
