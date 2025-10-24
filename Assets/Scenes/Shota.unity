@@ -1399,7 +1399,6 @@ MonoBehaviour:
   reachThreshold: 0.5
   directionSamples: 32
   stepLength: 1
-  subSteps: 1
   showGizmos: 1
 --- !u!4 &1345644349
 Transform:
