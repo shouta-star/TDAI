@@ -1,0 +1,7 @@
+Frame,Time,Object,Type,State,Action,Target,TargetX,TargetY,TargetZ,CurrentX,CurrentY,CurrentZ,NextX,NextY,NextZ,AIType,CPU(ms)
+1,0.00,AgentPrefab,Agent,IdleState,Idling,Goal,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,DStar,
+2,0.02,AgentPrefab,Agent,SearchState,Searching,Goal,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,DStar,
+3,0.04,AgentPrefab,Agent,MoveState,Moving,Goal,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,DStar,
+3,0.04,AgentPrefab,Agent,GoalState,Goal,Goal,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,DStar,
+242,0.50,AIManager,Performance,Pathfinding,Executed,DStar,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,DStar,234.360
+1787,2.98,AIManager,Performance,Pathfinding,Executed,DStar,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,DStar,198.728
