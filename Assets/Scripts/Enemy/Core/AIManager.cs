@@ -283,68 +283,223 @@ public class AIManager : MonoBehaviour
     //============================================================
     // PotentialField
     //============================================================
+    //private Vector3[] GetPathPotential(Vector3 startWorld, Vector3 goalWorld)
+    //{
+    //    Stopwatch sw = Stopwatch.StartNew();
+    //    List<Vector3> path = new List<Vector3> { startWorld };
+
+    //    float step = stepLength * 0.5f;
+    //    const int MAX_ITER = 1000;
+    //    const float goalThreshold = 0.5f;
+    //    const float kAtt = 1.0f;
+    //    const float kRep = 5.0f;
+    //    const float influenceRange = 3.0f;
+
+    //    Vector3 current = startWorld;
+
+    //    for (int i = 0; i < MAX_ITER; i++)
+    //    {
+    //        Vector3 attractive = (goalWorld - current).normalized * kAtt;
+    //        Vector3 repulsive = Vector3.zero;
+
+    //        foreach (var o in obstacles)
+    //        {
+    //            float d = Vector3.Distance(current, o.pos);
+    //            if (d < influenceRange)
+    //            {
+    //                float strength = kRep * (1.0f / d - 1.0f / influenceRange) / (d * d);
+    //                repulsive += (current - o.pos).normalized * strength;
+    //            }
+    //        }
+
+    //        Vector3 force = attractive + repulsive;
+    //        if (force.magnitude < 0.001f) break; // 局所最小値対策
+    //        force.Normalize();
+
+    //        Vector3 next = current + force * step;
+    //        if (IsObstacleBetween(current, next)) break;
+
+    //        path.Add(next);
+    //        current = next;
+
+    //        if (Vector3.Distance(current, goalWorld) < goalThreshold)
+    //        {
+    //            path.Add(goalWorld);
+    //            break;
+    //        }
+    //    }
+
+    //    sw.Stop();
+    //    CSVLogger.Log(
+    //        type: "Performance",
+    //        name: "AIManager",
+    //        state: "Pathfinding",
+    //        action: "Executed",
+    //        target: "PotentialField",
+    //        targetPos: Vector3.zero,
+    //        currentPos: Vector3.zero,
+    //        nextPos: Vector3.zero,
+    //        aiType: "PotentialField",
+    //        cpuMs: (float)sw.Elapsed.TotalMilliseconds
+    //    );
+
+    //    return path.ToArray();
+    //}
+    //private Vector3[] GetPathPotential(Vector3 startWorld, Vector3 goalWorld)
+    //{
+    //    const float kAtt = 1.0f;              // 吸引係数
+    //    const float kRep = 3.0f;              // 反発係数（弱め）
+    //    const float baseInfluence = 4.0f;     // 基本の影響範囲
+    //    const float step = 0.5f;              // ステップ幅
+    //    const float goalThreshold = 0.1f;     // ゴール到達閾値
+    //    const int MAX_ITER = 2000;            // 最大反復数
+
+    //    List<Vector3> path = new List<Vector3>();
+    //    Vector3 current = startWorld;
+    //    path.Add(current);
+
+    //    for (int i = 0; i < MAX_ITER; i++)
+    //    {
+    //        // 吸引力
+    //        Vector3 attractive = (goalWorld - current).normalized * kAtt;
+
+    //        // 反発力（★ dynamicObstacles → obstacles に修正）
+    //        Vector3 repulsive = Vector3.zero;
+    //        foreach (var o in obstacles)
+    //        {
+    //            float d = Vector3.Distance(current, o.pos);
+    //            // 障害物サイズに応じて影響範囲を少し広げる
+    //            float influenceRange = Mathf.Max(baseInfluence, o.radius * 2f + 0.5f);
+    //            if (d < influenceRange && d > 0.001f)
+    //            {
+    //                float strength = kRep * (1.0f / d - 1.0f / influenceRange) / (d * d);
+    //                repulsive += (current - o.pos).normalized * strength;
+    //            }
+    //        }
+
+    //        // 合力
+    //        Vector3 force = attractive + repulsive;
+
+    //        // 局所最小値対策：微小ノイズで脱出
+    //        if (force.magnitude < 0.001f)
+    //        {
+    //            force = new Vector3(Random.Range(-0.2f, 0.2f), 0, Random.Range(-0.2f, 0.2f));
+    //            Debug.LogWarning("[PotentialField] 局所最小値 → ノイズでリトライ");
+    //        }
+
+    //        force.Normalize();
+    //        Vector3 next = current + force * step;
+
+    //        // 障害物に当たったらその方向は捨てて継続（break しない）
+    //        if (IsObstacleBetween(current, next))
+    //            continue;
+
+    //        path.Add(next);
+    //        current = next;
+
+    //        // ゴール到達
+    //        if (Vector3.Distance(current, goalWorld) < goalThreshold)
+    //        {
+    //            path.Add(goalWorld);
+    //            Debug.Log("[PotentialField] ゴール到達");
+    //            break;
+    //        }
+    //    }
+
+    //    // 経路失敗時は空配列（MoveState が再探索に戻れる）
+    //    if (path.Count < 2)
+    //    {
+    //        Debug.LogWarning("[PotentialField] 経路生成失敗 → 空配列");
+    //        return new Vector3[0];
+    //    }
+
+    //    return path.ToArray();
+    //}
     private Vector3[] GetPathPotential(Vector3 startWorld, Vector3 goalWorld)
     {
-        Stopwatch sw = Stopwatch.StartNew();
-        List<Vector3> path = new List<Vector3> { startWorld };
+        const float kAtt = 0.8f;              // 吸引係数
+        const float kRep = 2.0f;              // 反発係数
+        const float baseInfluence = 4.0f;     // 基本影響範囲
+        const float stepMin = 0.3f;           // 最小ステップ
+        const float stepMax = 1.0f;           // 最大ステップ
+        const float goalThreshold = 0.5f;     // ゴール到達閾値
+        const int MAX_ITER = 3000;            // 最大反復数
 
-        float step = stepLength * 0.5f;
-        const int MAX_ITER = 1000;
-        const float goalThreshold = 0.5f;
-        const float kAtt = 1.0f;
-        const float kRep = 5.0f;
-        const float influenceRange = 3.0f;
-
+        List<Vector3> path = new List<Vector3>();
         Vector3 current = startWorld;
+        path.Add(current);
+
+        Vector3 lastForce = Vector3.zero;
 
         for (int i = 0; i < MAX_ITER; i++)
         {
-            Vector3 attractive = (goalWorld - current).normalized * kAtt;
-            Vector3 repulsive = Vector3.zero;
+            float distToGoal = Vector3.Distance(current, goalWorld);
 
+            // ✅ 吸引力：ゴール近くほど強化
+            float attStrength = Mathf.Clamp(kAtt * (1f + 5f / Mathf.Max(distToGoal, 1f)), 0.5f, 3.0f);
+            Vector3 attractive = (goalWorld - current).normalized * attStrength;
+
+            // ✅ 反発力（近距離のみ）
+            Vector3 repulsive = Vector3.zero;
             foreach (var o in obstacles)
             {
                 float d = Vector3.Distance(current, o.pos);
-                if (d < influenceRange)
+                float influenceRange = Mathf.Max(baseInfluence, o.radius * 2f + 0.5f);
+                if (d < influenceRange && d > 0.001f)
                 {
                     float strength = kRep * (1.0f / d - 1.0f / influenceRange) / (d * d);
                     repulsive += (current - o.pos).normalized * strength;
                 }
             }
 
-            Vector3 force = attractive + repulsive;
-            if (force.magnitude < 0.001f) break; // 局所最小値対策
-            force.Normalize();
+            // ✅ 合力 + 慣性
+            Vector3 force = attractive + repulsive + lastForce * 0.2f;
 
+            // ✅ ゴール方向補強
+            Vector3 goalDir = (goalWorld - current).normalized;
+            if (Vector3.Dot(force.normalized, goalDir) < 0.7f)
+            {
+                force += goalDir * 0.5f;  // ゴール方向への補正を追加
+            }
+
+            // ✅ 局所最小値脱出（Z方向ノイズ）
+            if (force.magnitude < 0.05f)
+            {
+                force += new Vector3(Random.Range(-0.2f, 0.2f), 0, Random.Range(0.3f, 0.8f));
+                Debug.LogWarning($"[PotentialField] 局所最小値 → ノイズ pos={current}");
+            }
+
+            // ✅ ステップ可変化（遠距離で大きく動く）
+            float step = Mathf.Lerp(stepMax, stepMin, Mathf.InverseLerp(0f, 15f, distToGoal));
+            force.Normalize();
             Vector3 next = current + force * step;
-            if (IsObstacleBetween(current, next)) break;
+
+            if (IsObstacleBetween(current, next))
+                continue;
 
             path.Add(next);
             current = next;
+            lastForce = force;
 
+            // ✅ ゴール到達
             if (Vector3.Distance(current, goalWorld) < goalThreshold)
             {
                 path.Add(goalWorld);
+                Debug.Log("[PotentialField] ゴール到達");
                 break;
             }
         }
 
-        sw.Stop();
-        CSVLogger.Log(
-            type: "Performance",
-            name: "AIManager",
-            state: "Pathfinding",
-            action: "Executed",
-            target: "PotentialField",
-            targetPos: Vector3.zero,
-            currentPos: Vector3.zero,
-            nextPos: Vector3.zero,
-            aiType: "PotentialField",
-            cpuMs: (float)sw.Elapsed.TotalMilliseconds
-        );
+        if (path.Count < 2)
+        {
+            Debug.LogWarning("[PotentialField] 経路生成失敗 → 空配列");
+            return new Vector3[0];
+        }
 
         return path.ToArray();
     }
+
+
 
     //============================================================
     // RRT
@@ -425,7 +580,7 @@ public class AIManager : MonoBehaviour
             obstacles.RemoveAll(o => Vector3.Distance(o.pos, position) < 0.1f);
         }
 
-        Debug.Log($"[AIManager] 動的障害物更新: pos={position}, radius={radius:F2}, blocked={isBlocked}");
+        //Debug.Log($"[AIManager] 動的障害物更新: pos={position}, radius={radius:F2}, blocked={isBlocked}");
 
         foreach (var agent in FindObjectsOfType<AgentController>())
         {

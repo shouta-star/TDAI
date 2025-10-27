@@ -41,7 +41,7 @@ public class MovingWall : MonoBehaviour
         {
             previousBlocked = isBlocked;
 
-            Debug.Log($"[MovingWall] {name} Å® {(isBlocked ? "Blocked" : "Open")} at {transform.position}");
+            //Debug.Log($"[MovingWall] {name} Å® {(isBlocked ? "Blocked" : "Open")} at {transform.position}");
 
             if (rend != null)
                 rend.material.color = isBlocked ? Color.red : Color.gray;
